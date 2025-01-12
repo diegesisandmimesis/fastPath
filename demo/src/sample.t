@@ -19,31 +19,16 @@
 #include <adv3.h>
 #include <en_us.h>
 
+#include <date.h>
+#include <bignum.h>
+
 #include "fastPath.h"
 
-versionInfo: GameID
-        name = 'fastPath Library Demo Game'
-        byline = 'Diegesis & Mimesis'
-        desc = 'Demo game for the fastPath library. '
-        version = '1.0'
-        IFID = '12345'
-	showAbout() {
-		"This is a simple test game that demonstrates the features
-		of the fastPath library.
-		<.p>
-		Consult the README.txt document distributed with the library
-		source for a quick summary of how to use the library in your
-		own games.
-		<.p>
-		The library source is also extensively commented in a way
-		intended to make it as readable as possible. ";
+versionInfo: GameID;
+gameMain: GameMainDef
+	getTimestamp() { return(new Date()); }
+	getInterval(d) { return(((new Date() - d) * 86400).roundToDecimal(3)); }
+
+	newGame() {
 	}
 ;
-gameMain: GameMainDef
-	initialPlayerChar = me
-	inlineCommand(cmd) { "<b>&gt;<<toString(cmd).toUpper()>></b>"; }
-	printCommand(cmd) { "<.p>\n\t<<inlineCommand(cmd)>><.p> "; }
-;
-
-startRoom: Room 'Void' "This is a featureless void.";
-+me: Person;
