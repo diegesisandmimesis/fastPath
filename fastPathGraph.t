@@ -10,25 +10,38 @@
 class FastPathGraph: Graph
 	vertexClass = FastPathVertex
 
-	generateNextHopCache() {
-		local l, p;
+	// If true, cache will be created if it doesn't already exist
+	autoCreateFastPathCache = true
+
+	createNextHopCache() {
+		local l;
 
 		l = getVertices();
-		l.forEach(function(v0) {
-			l.forEach(function(v1) {
-				if(v0 == v1) return;
-				if((p = getDijkstraPath(v0, v1)) == nil) return;
-				if(p.length < 2) return;
-				v0.setNextHop(v1.vertexID, getVertex(p[2]));
-			});
-		});
+		l.forEach({ x : _createNextHopCacheForVertex(x, l) });
 	}
+
+	_createNextHopCacheForVertex(v0, lst?) {
+		local p; 
+
+		if(lst == nil) lst = getVertices();
+		lst.forEach(function(v1) {
+			if(v0 == v1) return;
+			if((p = getDijkstraPath(v0, v1)) == nil) return;
+			if(p.length < 2) return;
+			v0.setNextHop(v1, getVertex(p[2]));
+		});
+		v0.nextHopCacheDirty = nil;
+	}
+
 	clearNextHopCache() {
 		getVertices().forEach({ x: x.clearNextHopCache() });
 	}
+
 	getNextHop(v0, v1) {
 		if((v0 = canonicalizeVertex(v0)) == nil) return(nil);
 		if((v1 = canonicalizeVertex(v1)) == nil) return(nil);
+		if(v0.nextHopCacheDirty && autoCreateFastPathCache)
+			_createNextHopCacheForVertex(v0);
 		return(v0.getNextHop(v1.vertexID));
 	}
 

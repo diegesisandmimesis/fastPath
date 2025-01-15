@@ -8,3 +8,4 @@
 -lib dataStructures/dataStructures
 -lib ../fastPath
 -source src/sample.t
+-source reflect.t

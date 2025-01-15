@@ -30,5 +30,28 @@ gameMain: GameMainDef
 	getInterval(d) { return(((new Date() - d) * 86400).roundToDecimal(3)); }
 
 	newGame() {
+		local p;
+
+		//graph0.createNextHopCache();
+
+		if((p = graph0.findFastPath('in', 'out')) == nil) {
+			"\nGot nil path\n ";
+			return;
+		}
+		"\nPath:\n ";
+		p.forEach(function(o) {
+			"\n\t<<toString(o.vertexID)>>\n ";
+		});
 	}
+;
+
+graph0: FastPathGraph
+	[	'in',	'foo',	'bar',	'baz',	'out'	]
+	[
+		0,	1,	0,	0,	0,
+		1,	0,	1,	1,	0,
+		0,	1,	0,	1,	0,
+		0,	1,	1,	0,	1,
+		0,	0,	0,	0,	1
+	]
 ;
