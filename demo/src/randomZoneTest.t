@@ -69,20 +69,76 @@ versionInfo: GameID;
 gameMain: GameMainDef
 	initialPlayerChar = me
 
+	count = 1000
+	inZone = nil
+
 	getTimestamp() { return(new Date()); }
-	getInterval(d) { return(((new Date() - d) * 86400).roundToDecimal(3)); }
+	getInterval(d) { return(((new Date() - d) * 86400).roundToDecimal(5)); }
 
 	newGame() {
+		local i, l, rm0, rm1, ts, v0, v1;
+
+		//pathfinder.clearNextHopCache();
+		rm0 = fooMap._getRoom(100);
+		rm1 = barMap._getRoom(1);
+		rm0.north = rm1;
+		rm1.south = rm0;
+		pathfinder.addEdge(rm0.name, rm1.name);
+		pathfinder.addEdge(rm1.name, rm0.name);
+
+		rm0 = barMap._getRoom(100);
+		rm1 = bazMap._getRoom(1);
+		rm0.north = rm1;
+		rm1.south = rm0;
+		pathfinder.addEdge(rm0.name, rm1.name);
+		pathfinder.addEdge(rm1.name, rm0.name);
+
+		ts = getTimestamp();
 		pathfinder.createNextHopCache();
-		local l = pathfinder.findFastPath('room1', 'room100');
-		"Path:\n ";
-		if(l == nil) {
-			"\n\tno path\n ";
-			return;
-		}
+		v0 = getInterval(ts);
+		"Creating cache took <<toString(v0)>> seconds.\n ";
+
+/*
+		l = pathfinder.findPath('fooroom1', 'bazroom100');
 		l.forEach(function(o) {
 			"\n\t<<toString(o.vertexID)>>\n ";
 		});
+*/
+		ts = getTimestamp();
+		for(i = 0; i < count; i++) {
+			rm0 = 'fooroom' + toString(rand(100) + 1);
+			if(inZone)
+				rm1 = 'fooroom' + toString(rand(100) + 1);
+			else
+				rm1 = 'bazroom' + toString(rand(100) + 1);
+			l = pathfinder.findPath(rm0, rm1);
+			if(l == nil) {
+				"ERROR: no path\n ";
+				return;
+			}
+		}
+		v0 = getInterval(ts);
+		"Computing <<toString(count)>> paths
+			via RoomPathfinder.findPath()
+			took <<toString(v0)>> seconds.\n ";
+
+		ts = getTimestamp();
+		for(i = 0; i < count; i++) {
+			rm0 = fooMap._getRoom(rand(100) + 1);
+			if(inZone)
+				rm1 = fooMap._getRoom(rand(100) + 1);
+			else
+				rm1 = bazMap._getRoom(rand(100) + 1);
+			l = roomPathFinder.findPath(me, rm0, rm1);
+		}
+		v1 = getInterval(ts);
+		"Computing <<toString(count)>> paths
+			via roomPathFinder.findPath()
+			took <<toString(v1)>> seconds.\n ";
+
+		v0 = new BigNumber(v0);
+		v1 = new BigNumber(v1);
+		"Speedup of <<toString(((v1 / v0)).roundToDecimal(3))>>\n ";
 	}
 ;
 
@@ -96,6 +152,28 @@ modify Room
 
 pathfinder: RoomPathfinder;
 
-map: SimpleRandomMapGenerator
+class RoomFoo: SimpleRandomMapRoom
+	fastPathZone = 'foo'
+;
+class RoomBar: SimpleRandomMapRoom
+	fastPathZone = 'bar'
+;
+class RoomBaz: SimpleRandomMapRoom
+	fastPathZone = 'baz'
+;
+
+fooMap: SimpleRandomMapGenerator
 	movePlayer = nil
+	roomClass = RoomFoo
+	roomBaseName = 'fooRoom'
+;
+barMap: SimpleRandomMapGenerator
+	movePlayer = nil
+	roomClass = RoomBar
+	roomBaseName = 'barRoom'
+;
+bazMap: SimpleRandomMapGenerator
+	movePlayer = nil
+	roomClass = RoomBaz
+	roomBaseName = 'bazRoom'
 ;

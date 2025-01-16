@@ -70,12 +70,12 @@ class FastPathMap: FastPathGraph
 		});
 
 		// Now figure out how the zones are connected to each other.
-		fastPathAddGateways();
+		addFastPathGateways();
 	}
 
 	// Build the connections in the gateway graph.  The vertices are
 	// added in createNextHopCache() above.
-	fastPathAddGateways() {
+	addFastPathGateways() {
 		local v1;
 
 		// Iterate through each vertex in the "main" graph.
@@ -133,6 +133,7 @@ class FastPathMap: FastPathGraph
 		return(true);
 	}
 
+/*
 	getNextHop(v0, v1) {
 		local z0, z1;
 
@@ -182,5 +183,37 @@ class FastPathMap: FastPathGraph
 		// We're not at the gateway, so our next hop is the next
 		// step we need to take toward the source end of the gateway.
 		return(v0.getNextHop(gw.src));
+	}
+*/
+
+	findPath(v0, v1) {
+		local i, r, v, z0, z1, zp, y0, y1;
+
+		if((v0 = canonicalizeVertex(v0)) == nil) return(nil);
+		if((v1 = canonicalizeVertex(v1)) == nil) return(nil);
+		if(v0.data && v1.data
+			&& (v0.data.fastPathZone == v1.data.fastPathZone))
+			return(inherited(v0, v1));
+
+		if((z0 = gateways.getVertex(v0.data.fastPathZone)) == nil)
+			return(nil);
+		if((z1 = gateways.getVertex(v1.data.fastPathZone)) == nil)
+			return(nil);
+
+		if((zp = gateways.findPath(z0, z1)) == nil) return(nil);
+
+		r = new Vector();
+		v = v0;
+
+		for(i = 2; i <= zp.length; i++) {
+			e = gateways.getEdge(zp[i - 1], zp[i]);
+			e = e.data[1];
+			r.appendAll(findPath(v, e.src));
+			r.append(e.dst);
+			v = e.dst;
+		}
+
+		//return(inherited(v0, v1));
+		return(r);
 	}
 ;

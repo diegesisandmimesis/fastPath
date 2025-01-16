@@ -11,3 +11,4 @@
 -lib ../fastPath
 -source src/randomZoneTest.t
 -source reflect.t
+-source extensions/pathfind.t

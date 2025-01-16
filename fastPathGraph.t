@@ -46,7 +46,7 @@ class FastPathGraph: DirectedGraph
 		return(v0.getNextHop(v1.vertexID));
 	}
 
-	findFastPath(v0, v1) {
+	findPath(v0, v1) {
 		local r, v;
 
 		if((v0 = canonicalizeVertex(v0)) == nil) return(nil);
