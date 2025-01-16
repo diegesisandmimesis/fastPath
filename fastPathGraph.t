@@ -7,8 +7,9 @@
 
 #include "fastPath.h"
 
-class FastPathGraph: Graph
+class FastPathGraph: DirectedGraph
 	vertexClass = FastPathVertex
+	edgeClass = FastPathEdge
 
 	// If true, cache will be created if it doesn't already exist
 	autoCreateFastPathCache = true

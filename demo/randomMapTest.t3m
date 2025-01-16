@@ -1,0 +1,13 @@
+-D LANGUAGE=en_us
+-D MESSAGESTYLE=neu
+-D SIMPLE_RANDOM_MAP
+-Fy obj -Fo obj
+-Fs ../..
+-o games/randomMapTest.t3
+-lib system
+-lib adv3/adv3
+-lib dataStructures/dataStructures
+-lib simpleRandomMap/simpleRandomMap
+-lib ../fastPath
+-source src/randomMapTest.t
+-source reflect.t

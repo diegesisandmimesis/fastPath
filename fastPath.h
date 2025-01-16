@@ -11,4 +11,6 @@
 #error "dataStructures should be in /home/user/tads/dataStructures ."
 #endif // DATA_STRUCTURES_H
 
+#define isFastPathGateway(obj) (isType(obj, FastPathGateway))
+
 #define FAST_PATH_H
