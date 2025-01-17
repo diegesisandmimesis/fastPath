@@ -187,7 +187,7 @@ class FastPathMap: FastPathGraph
 */
 
 	findPath(v0, v1) {
-		local i, r, v, z0, z1, zp, y0, y1;
+		local e, i, r, v, z0, z1, zp;
 
 		if((v0 = canonicalizeVertex(v0)) == nil) return(nil);
 		if((v1 = canonicalizeVertex(v1)) == nil) return(nil);

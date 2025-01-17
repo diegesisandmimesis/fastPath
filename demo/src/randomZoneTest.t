@@ -29,6 +29,7 @@
 #error "This demo requires the simpleRandomMap module. "
 #endif // SIMPLE_RANDOM_MAP_H
 
+/*
 modify Room
 	allDirectionsExitList(actor?, cb?) {
 		local c, dst, r;
@@ -64,116 +65,161 @@ modify Room
 		return(r);
 	}
 ;
+*/
 
 versionInfo: GameID;
 gameMain: GameMainDef
 	initialPlayerChar = me
 
+	// Number of trials to run for each test.
+	// Each trial is finding the path between two random rooms.
 	count = 1000
-	inZone = nil
 
+	// Zone instances and names.  Used by the methods we use
+	// for picking random rooms.
+	zoneNames = static [ 'foo', 'bar', 'baz' ]
+	zones = static [ fooMap, barMap, bazMap ]
+
+	// Utility methods for measuring elapsed time.
 	getTimestamp() { return(new Date()); }
 	getInterval(d) { return(((new Date() - d) * 86400).roundToDecimal(5)); }
 
-	newGame() {
-		local i, l, rm0, rm1, ts, v0, v1;
-
-		//pathfinder.clearNextHopCache();
-		rm0 = fooMap._getRoom(100);
-		rm1 = barMap._getRoom(1);
+	// Utility method to connect two rooms north to south.
+	// Not for general use, this demo only.
+	_connectRoom(rm0, rm1) {
 		rm0.north = rm1;
 		rm1.south = rm0;
 		pathfinder.addEdge(rm0.name, rm1.name);
 		pathfinder.addEdge(rm1.name, rm0.name);
+	}
 
-		rm0 = barMap._getRoom(100);
-		rm1 = bazMap._getRoom(1);
-		rm0.north = rm1;
-		rm1.south = rm0;
-		pathfinder.addEdge(rm0.name, rm1.name);
-		pathfinder.addEdge(rm1.name, rm0.name);
+	// Connect the two PRNG maps, 100th room of map0 to 1st room of map1.
+	_connectMaps(map0, map1) {
+		_connectRoom(map0._getRoom(100), map1._getRoom(1));
+	}
 
+	// Connect the individual PRNG map segments.
+	tweakMap() {
+		_connectMaps(fooMap, barMap);
+		_connectMaps(barMap, bazMap);
+	}
+
+	// Time how long it takes to create the pathfinding cache.
+	timeCache() {
+		local ts;
+
+		pathfinder.clearNextHopCache();
+		t3RunGC();
 		ts = getTimestamp();
 		pathfinder.createNextHopCache();
-		v0 = getInterval(ts);
-		"Creating cache took <<toString(v0)>> seconds.\n ";
+		"Creating cache took <<toString(getInterval(ts))>> seconds.\n ";
+	}
 
-/*
-		l = pathfinder.findPath('fooroom1', 'bazroom100');
-		l.forEach(function(o) {
-			"\n\t<<toString(o.vertexID)>>\n ";
-		});
-*/
+	// Run (and time) tests.
+	// First arg is a label for the results, second arg is the
+	// test callback.
+	// Return value is the interval.
+	runTest(lbl, cb) {
+		local i, r, ts;
+
+		// Get the time at the start of the test.
 		ts = getTimestamp();
-		for(i = 0; i < count; i++) {
-			rm0 = 'fooroom' + toString(rand(100) + 1);
-			if(inZone)
-				rm1 = 'fooroom' + toString(rand(100) + 1);
-			else
-				rm1 = 'bazroom' + toString(rand(100) + 1);
+
+		// Invoke the callback count times.
+		for(i = 0; i < count; i++)
+			cb(i);
+
+		// Get the interval since the start of the test.
+		r = getInterval(ts);
+
+		// Log the results.
+		"Computing <<toString(count)>> paths via <<lbl>>
+			took <<toString(r)>> seconds.\n ";
+
+		// Return the interval.
+		return(r);
+	}
+
+	// Pick a random room name.
+	pickRandomRoomName() {
+		return(zoneNames[rand(zoneNames.length) + 1] + 'room'
+			+ toString(rand(100) + 1));
+	}
+
+	// Returns a random room instance.
+	// This relies on the SimpleRandomMap._getRoom() method provided
+	// by the simpleRandomMap module.
+	pickRandomRoom() {
+		return(zones[rand(zones.length) + 1]._getRoom(rand(100) + 1));
+	}
+
+	newGame() {
+		local t0, t1;
+
+		// Connect the blocks of PRNG map.
+		tweakMap();
+
+		// Report how long it takes to build the next hop cache.
+		timeCache();
+
+		// Compute the path repeatedly, choosing random
+		// endpoints.  This test uses the pathfinder provided
+		// by this module.
+		t0 = runTest('RoomPathfinder.findPath()', function(n) {
+			local l, rm0, rm1;
+
+			rm0 = pickRandomRoomName();
+			rm1 = pickRandomRoomName();
 			l = pathfinder.findPath(rm0, rm1);
-			if(l == nil) {
-				"ERROR: no path\n ";
-				return;
-			}
-		}
-		v0 = getInterval(ts);
-		"Computing <<toString(count)>> paths
-			via RoomPathfinder.findPath()
-			took <<toString(v0)>> seconds.\n ";
+			if(l == nil) "ERROR: no path\n ";
+		});
 
-		ts = getTimestamp();
-		for(i = 0; i < count; i++) {
-			rm0 = fooMap._getRoom(rand(100) + 1);
-			if(inZone)
-				rm1 = fooMap._getRoom(rand(100) + 1);
-			else
-				rm1 = bazMap._getRoom(rand(100) + 1);
+		// Compute the path repeatedly, choosing random
+		// endpoints.  This test uses the adv3 pathfinder
+		// from extensions/pathfind.t .
+		t1 = runTest('roomPathfinder.findPath()', function(n) {
+			local l, rm0, rm1;
+
+			rm0 = pickRandomRoom();
+			rm1 = pickRandomRoom();
 			l = roomPathFinder.findPath(me, rm0, rm1);
-		}
-		v1 = getInterval(ts);
-		"Computing <<toString(count)>> paths
-			via roomPathFinder.findPath()
-			took <<toString(v1)>> seconds.\n ";
+			if(l == nil) "ERROR: no path\n ";
+		});
 
-		v0 = new BigNumber(v0);
-		v1 = new BigNumber(v1);
-		"Speedup of <<toString(((v1 / v0)).roundToDecimal(3))>>\n ";
+		// Figure out how much faster the module is compared to
+		// the stock pathfinder.
+		t0 = new BigNumber(t0);
+		t1 = new BigNumber(t1);
+		"Speedup of <<toString(((t1 / t0)).roundToDecimal(3))>>\n ";
 	}
 ;
 
+// We have to define at least one Actor, as connector passability is
+// per-Actor.
 me: Person;
-
-modify Room
-	fastPathID = nil		// vertex ID
-	fastPathZone = nil		// zone ID
-	fastPathVertex = nil		// ref to vertex added automagically
-;
 
 pathfinder: RoomPathfinder;
 
-class RoomFoo: SimpleRandomMapRoom
-	fastPathZone = 'foo'
-;
-class RoomBar: SimpleRandomMapRoom
-	fastPathZone = 'bar'
-;
-class RoomBaz: SimpleRandomMapRoom
-	fastPathZone = 'baz'
-;
+// Three room classes for the three map generators.  All we care about
+// here is assigning each class a unique-ish zone ID, so all the rooms
+// in each PRNG map block will be in the same zone.
+class RoomFoo: SimpleRandomMapRoom fastPathZone = 'foo';
+class RoomBar: SimpleRandomMapRoom fastPathZone = 'bar';
+class RoomBaz: SimpleRandomMapRoom fastPathZone = 'baz';
 
+// Three random map generator instances.
 fooMap: SimpleRandomMapGenerator
-	movePlayer = nil
-	roomClass = RoomFoo
-	roomBaseName = 'fooRoom'
+	movePlayer = nil		// don't try to place player in map
+	roomClass = RoomFoo		// class for created Room instances
+	roomBaseName = 'fooroom'	// room names will be this plus a number
 ;
 barMap: SimpleRandomMapGenerator
 	movePlayer = nil
 	roomClass = RoomBar
-	roomBaseName = 'barRoom'
+	roomBaseName = 'barroom'
 ;
 bazMap: SimpleRandomMapGenerator
 	movePlayer = nil
 	roomClass = RoomBaz
-	roomBaseName = 'bazRoom'
+	roomBaseName = 'bazroom'
 ;
