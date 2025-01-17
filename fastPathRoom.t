@@ -43,7 +43,7 @@ modify Room
 // Room pathfinder.
 // Creating an instance of this class will automagically enable
 // cached pathfinding.
-class RoomPathfinder: FastPathPreinit
+class RoomPathfinder: FastPathMap, FastPathPreinit
 	// The kind of object we keep track of.
 	fastPathObjectClass = Room
 
@@ -54,8 +54,10 @@ class RoomPathfinder: FastPathPreinit
 	fastPathGrouper(obj) {
 		if(!isRoom(obj)) return(nil);
 		return(new FastPathGroup(
-			(obj.fastPathZone ? obj.fastPathZone : 'default'),
-			(obj.fastPathID ? obj.fastPathID : obj.name)));
+			getFastPathZone(obj),
+			//(obj.fastPathZone ? obj.fastPathZone : 'default'),
+			getFastPathID(obj)));
+			//(obj.fastPathID ? obj.fastPathID : obj.name)));
 		//return(inherited(obj));
 	}
 /*
@@ -72,5 +74,28 @@ class RoomPathfinder: FastPathPreinit
 			addEdge(obj.vertexID,
 				(rm.fastPathID ? rm.fastPathID : rm.name))
 		});
+	}
+
+	findPath(v0, v1) {
+		local l, r;
+
+		if(isRoom(v0) && v0.fastPathVertex) v0 = v0.fastPathVertex;
+		if(isRoom(v1) && v1.fastPathVertex) v1 = v1.fastPathVertex;
+
+		l = findPathWithZones(v0, v1);
+
+		r = new Vector(l.length());
+		l.forEach({ x: r.append(x.data) });
+
+		return(r);
+	}
+
+	testPath(v0, v1, lst) {
+		if(!lst || !lst.length) return(nil);
+		if(!isRoom(v1)) {
+			v1 = canonicalizeVertex(v1);
+			if(isVertex(v1)) v1 = v1.fastPathVertex;
+		}
+		return(lst[lst.length()] == v1);
 	}
 ;

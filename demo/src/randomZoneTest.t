@@ -170,10 +170,10 @@ gameMain: GameMainDef
 		t0 = runTest('RoomPathfinder.findPath()', function(n) {
 			local l, rm0, rm1;
 
-			rm0 = pickRandomRoomName();
-			rm1 = pickRandomRoomName();
+			rm0 = pickRandomRoom();
+			rm1 = pickRandomRoom();
 			l = pathfinder.findPath(rm0, rm1);
-			if(!testPath(rm0, rm1, l))
+			if(!pathfinder.testPath(rm0, rm1, l))
 				"ERROR: pathfinding failed\n ";
 		});
 
@@ -195,16 +195,6 @@ gameMain: GameMainDef
 		t1 = new BigNumber(t1);
 		"Speedup of <<toString(((t1 / t0)).roundToDecimal(3))>>\n ";
 	}
-
-	testPath(rm0, rm1, lst) {
-		local v;
-
-		if(!lst || !lst.length()) {
-			return(nil);
-		}
-		if((v = pathfinder.getVertex(rm1)) == nil) return(nil);
-		return(v.vertexID == lst[lst.length].vertexID);
-	}
 ;
 
 // We have to define at least one Actor, as connector passability is
@@ -212,6 +202,10 @@ gameMain: GameMainDef
 me: Person;
 
 pathfinder: RoomPathfinder;
+
+modify SimpleRandomMapRoom
+	fastPathID = (name)
+;
 
 // Three room classes for the three map generators.  All we care about
 // here is assigning each class a unique-ish zone ID, so all the rooms

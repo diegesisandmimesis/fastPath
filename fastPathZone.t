@@ -8,6 +8,21 @@
 
 #include "fastPath.h"
 
+// Data structure consisting of a zoneID and a vertexID.  This is used
+// by fastPathGroup(), which takes object instances (for example rooms)
+// and figures out what zone they belong in and what vertex ID to use
+// for them.
+// A zone in this usage is just a subgraph that gets its own lookup table
+// for path finding.
+class FastPathGroup: object
+	zoneID = nil
+	vertexID = nil
+	construct(v0?, v1?) {
+		zoneID = v0;
+		vertexID = v1;
+	}
+;
+
 // A gateway is a point of contact between two zones.  In our usage gateways
 // always have an implied orientation--a gateway is from one zone to another
 // zone, not to AND from (because pathing may not be symmetric).
@@ -21,7 +36,113 @@ class FastPathGateway: object
 ;
 
 class FastPathMap: FastPathGraph
+	// To hold graph of the zones.
 	gateways = nil
+
+	// Object class we're mapping.
+	fastPathObjectClass = nil
+
+	// If a vertex ID isn't provided by the object, it'll be
+	// assigned on using this plus the vertex number.
+	fastPathIDBase = 'fastPathNode'
+
+	// Called at preinit.
+	// Here's where we iterate over all of our objects and try to build
+	// a graph corresponding to how they're connected.
+	initializeFastPath() {
+		local v, z;
+
+		// If there's no definied object class for us, we have nothing
+		// to do.
+		if(fastPathObjectClass == nil)
+			return;
+
+		// Iterate over all the instances of the object type we care
+		// about and add them as vertices.
+		forEachInstance(fastPathObjectClass, function(o) {
+			// Pass this instance to our grouper.  If it doesn't
+			// provide us with a zone and vertex ID, bail.
+			if((z = fastPathGrouper(o)) == nil)
+				return;
+
+			// If the requested vertex ID is already in our
+			// graph, we're done.
+			if((v = getVertex(z.vertexID)) != nil)
+				return;
+
+			// Add the vertex.
+			v = addVertex(z.vertexID);
+
+			// Add the zone ID to this instance.
+			o.fastPathZone = z.zoneID;
+
+			// Have it remember its vertex.
+			o.fastPathVertex = v;
+
+			// Make the data property on the vertex a pointer
+			// to the instance.
+			v.data = o;
+		});
+
+		// Now go back through the vertices we just added and
+		// call our method to add their edges.
+		getVertices().forEach({ x: fastPathAddEdges(x) });
+
+	}
+
+	// Method that associates an object with a zone ID and a
+	// vertex ID.  Intended to be overwritten by subclasses.
+	// See RoomPathfinder for an example.
+	fastPathGrouper(obj) {
+		if(obj == nil) return(nil);
+		return(new FastPathGroup(getFastPathZone(obj),
+			getFastPathID(obj)));
+	}
+
+	// Add all the edges associated with this object.  Intended to
+	// be overwitten by subclasses.  See RoomPathfinder for an example.
+	// Here we just test that the object is a vertex and return a
+	// boolean indicating the result.  This is so subclasses can
+	// do a "if(!inherited(obj)) return(nil);" or the like at the top.
+	fastPathAddEdges(obj) {
+		if(!isVertex(obj)) return(nil);
+		return(true);
+	}
+
+	// Returns the zone ID associated with the object.
+	getFastPathZone(obj) {
+		if(obj == nil) return(nil);
+		return(obj.fastPathZone ? obj.fastPathZone : 'default');
+	}
+
+	// Returns the vertex ID (in the pathfinding graph) for the object.
+	// Most of the logic is to provide a unique-ish default if a value
+	// isn't provided.
+	getFastPathID(obj) {
+		local id, n;
+
+		// Object can't be nil
+		if(obj == nil)
+			return(nil);
+
+		// If the object has a declared fastPathID, use it, done.
+		if(obj.fastPathID != nil)
+			return(obj.fastPathID);
+
+		// Loop to assign a generic "obj#123"-style unique-ish
+		// vertex ID.
+		n = getVertices().length();
+		id = fastPathIDBase + '#' + toString(n);
+		while(getVertex(id) != nil) {
+			n += 1;
+			id = fastPathIDBase + '#' + toString(n);
+		}
+
+		// Add it to the object.
+		obj.fastPathID = id;
+
+		return(obj.fastPathID);
+	}
 
 	createNextHopCache() {
 		local id, t;
@@ -133,80 +254,30 @@ class FastPathMap: FastPathGraph
 		return(true);
 	}
 
-/*
-	getNextHop(v0, v1) {
-		local z0, z1;
+	findPath(v0, v1) { return(findPathWithZones(v0, v1)); }
 
-		// Make sure we have valid vertices.
-		if((v0 = canonicalizeVertex(v0)) == nil) return(nil);
-		if((v1 = canonicalizeVertex(v1)) == nil) return(nil);
-
-		// Make sure the vertices have data.
-		if((v0.data == nil) || (v1.data == nil)) return(nil);
-
-		// Make sure the vertex data includes zone IDs.
-		if((z0 = v0.data.fastPathZone) == nil) return(nil);
-		if((z1 = v1.data.fastPathZone) == nil) return(nil);
-
-		// If vertices are in difference zones...
-		if(z0 != z1)
-			return(getNextHopViaGateway(v0, v1, z0, z1));
-
-		if(v0.nextHopCacheDirty && autoCreateFastPathCache)
-			_createNextHopCacheForVertex(v0);
-
-		return(v0.getNextHop(v1.vertexID));
-	}
-
-	getNextHopViaGateway(v0, v1, z0, z1) {
-		local gw, e, n, z;
-
-		// Get the gateway vertex for the first zone...
-		if((z = gateways.getVertex(z0)) == nil) return(nil);
-
-		// Get the next vertex in the zone path...
-		if((n = z.getNextHop(z1)) == nil) return(nil);
-
-		// Get the edge between the first zone and the next...
-		if((e = gateways.getEdge(z0, n)) == nil) return(nil);
-
-		// Make sure the edge has gateway data.
-		if(e.data == nil) return(nil);
-
-		gw = e.data[1];
-
-		// If the first vertex is the source end of the gateway,
-		// then the next hop is the destination end of the gateway.
-		if(gw.src == v0)
-			return(gw.dst);
-
-		// We're not at the gateway, so our next hop is the next
-		// step we need to take toward the source end of the gateway.
-		return(v0.getNextHop(gw.src));
-	}
-*/
 	// Zone-aware pathfinding routine.
-	findPath(v0, v1) {
+	findPathWithZones(v0, v1) {
 		local e, i, r, v, z0, z1, zp;
 
 		// Make sure the inputs are valid.
-		if((v0 = canonicalizeVertex(v0)) == nil) return(nil);
-		if((v1 = canonicalizeVertex(v1)) == nil) return(nil);
+		if((v0 = canonicalizeVertex(v0)) == nil) return([]);
+		if((v1 = canonicalizeVertex(v1)) == nil) return([]);
 
 		// If both endpoints are in the same zone, use the
 		// default (non-zone-aware) method.
 		if(v0.data && v1.data
 			&& (v0.data.fastPathZone == v1.data.fastPathZone))
-			return(inherited(v0, v1));
+			return(findPathInSingleZone(v0, v1));
 
 		// Make sure both zones exists.
 		if((z0 = gateways.getVertex(v0.data.fastPathZone)) == nil)
-			return(nil);
+			return([]);
 		if((z1 = gateways.getVertex(v1.data.fastPathZone)) == nil)
-			return(nil);
+			return([]);
 
 		// Get a path through the zones.
-		if((zp = gateways.findPath(z0, z1)) == nil) return(nil);
+		if((zp = gateways.findPath(z0, z1)) == nil) return([]);
 
 		// To hold the path.
 		r = new Vector();
@@ -228,7 +299,7 @@ class FastPathMap: FastPathGraph
 			// Add the path between the current vertex and
 			// the near-side gateway.  That's all the vertices
 			// in the path in the previous zone.
-			r.appendAll(findPath(v, e.src));
+			r.appendAll(findPathInSingleZone(v, e.src));
 			
 			// Make the far side gateway the current vertex.
 			v = e.dst;
@@ -242,7 +313,7 @@ class FastPathMap: FastPathGraph
 			// zone--is NOT the destination vertex, add the path
 			// from it to the destination vertex.  This will be
 			// the path through the last zone.
-			r.appendAll(findPath(v, v1));
+			r.appendAll(findPathInSingleZone(v, v1));
 		} else {
 			// If the current vertex IS the destination vertex,
 			// we just have to add it.

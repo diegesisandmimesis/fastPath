@@ -46,11 +46,11 @@ class FastPathGraph: DirectedGraph
 		return(v0.getNextHop(v1.vertexID));
 	}
 
-	findPath(v0, v1) {
+	findPathInSingleZone(v0, v1) {
 		local r, v;
 
-		if((v0 = canonicalizeVertex(v0)) == nil) return(nil);
-		if((v1 = canonicalizeVertex(v1)) == nil) return(nil);
+		if((v0 = canonicalizeVertex(v0)) == nil) return([]);
+		if((v1 = canonicalizeVertex(v1)) == nil) return([]);
 
 		r = new Vector();
 		v = v0;
@@ -64,5 +64,13 @@ class FastPathGraph: DirectedGraph
 		}
 
 		return(r);
+	}
+
+	findPath(v0, v1) { return(findPathInSingleZone(v0, v1)); }
+
+	testPath(v0, v1, lst) {
+		if(!lst || !lst.length) return(nil);
+		return(canonicalizeVertex(v1)
+			== canonicalizeVertex(lst[lst.length]));
 	}
 ;

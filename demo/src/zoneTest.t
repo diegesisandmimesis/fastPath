@@ -24,47 +24,6 @@
 
 #include "fastPath.h"
 
-#include "simpleRandomMap.h"
-#ifndef SIMPLE_RANDOM_MAP_H
-#error "This demo requires the simpleRandomMap module. "
-#endif // SIMPLE_RANDOM_MAP_H
-
-modify Room
-	allDirectionsExitList(actor?, cb?) {
-		local c, dst, r;
-
-		r = new Vector(Direction.allDirections.length());
-
-		actor = (actor ? actor : gActor);
-		if(!actor) return(r);
-
-		Direction.allDirections.forEach(function(d) {
-			if((c = getTravelConnector(d, actor)) == nil)
-				return;
-			if(!c.isConnectorApparent(self, actor))
-				return;
-			if((dst = c.getDestination(self, actor)) == nil)
-				return;
-			if((cb != nil) && ((cb)(d, dst) != true))
-				return;
-			r.append(new DestInfo(d, dst, nil, nil));
-		});
-
-		return(r);
-	}
-
-	exitList(actor?, cb?) { return(allDirectionsExitList(actor, cb)); }
-
-	destinationList(actor?, cb?) {
-		local r;
-
-		r = new Vector();
-		exitList(actor, cb).forEach({ x: r.append(x.dest_) });
-
-		return(r);
-	}
-;
-
 versionInfo: GameID;
 gameMain: GameMainDef
 	initialPlayerChar = me
@@ -73,44 +32,25 @@ gameMain: GameMainDef
 	getInterval(d) { return(((new Date() - d) * 86400).roundToDecimal(3)); }
 
 	newGame() {
+		local l;
+
 		pathfinder.createNextHopCache();
-		local l = pathfinder.findPath('start', 'exit');
+		//local l = pathfinder.findPath('start', 'exit');
+		l = pathfinder.findPath(startRoom, exitRoom);
 		"Path:\n ";
 		if(l == nil) {
 			"\n\tno path\n ";
 			return;
 		}
 		l.forEach(function(o) {
-			"\n\t<<toString(o.vertexID)>>\n ";
+			"\n\t<<toString(o.name)>>\n ";
 		});
 	}
 ;
 
 me: Person;
 
-modify Room
-	fastPathID = nil		// vertex ID
-	fastPathZone = nil		// zone ID
-	fastPathVertex = nil		// ref to vertex added automagically
-;
-
-pathfinder: FastPathPreinit
-	fastPathObjectClass = Room
-
-	fastPathGrouper(obj) {
-		if(!isRoom(obj)) return(nil);
-		return(new FastPathGroup(
-			(obj.fastPathZone ? obj.fastPathZone : 'default'),
-			(obj.fastPathID ? obj.fastPathID : obj.name)));
-	}
-
-	fastPathAddEdges(obj) {
-		if(!isVertex(obj) || !isRoom(obj.data)) return;
-		obj.data.destinationList(me).forEach(function(rm) {
-			addEdge(obj.vertexID, rm.name);
-		});
-	}
-;
+pathfinder: RoomPathfinder;
 
 class Foo: Room 'Foo' "This is a foo room. " fastPathZone = 'foo';
 class Bar: Room 'Bar' "This is a bar room. " fastPathZone = 'bar';
