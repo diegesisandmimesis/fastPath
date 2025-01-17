@@ -185,35 +185,70 @@ class FastPathMap: FastPathGraph
 		return(v0.getNextHop(gw.src));
 	}
 */
-
+	// Zone-aware pathfinding routine.
 	findPath(v0, v1) {
 		local e, i, r, v, z0, z1, zp;
 
+		// Make sure the inputs are valid.
 		if((v0 = canonicalizeVertex(v0)) == nil) return(nil);
 		if((v1 = canonicalizeVertex(v1)) == nil) return(nil);
+
+		// If both endpoints are in the same zone, use the
+		// default (non-zone-aware) method.
 		if(v0.data && v1.data
 			&& (v0.data.fastPathZone == v1.data.fastPathZone))
 			return(inherited(v0, v1));
 
+		// Make sure both zones exists.
 		if((z0 = gateways.getVertex(v0.data.fastPathZone)) == nil)
 			return(nil);
 		if((z1 = gateways.getVertex(v1.data.fastPathZone)) == nil)
 			return(nil);
 
+		// Get a path through the zones.
 		if((zp = gateways.findPath(z0, z1)) == nil) return(nil);
 
+		// To hold the path.
 		r = new Vector();
+
+		// Make the start vertex the current vertex.
 		v = v0;
 
+		// Evaluate all the pairs of zones:  1st and 2nd, 2nd
+		// and 3rd, and so on.
 		for(i = 2; i <= zp.length; i++) {
+			// Get the edge between the previous zone and the
+			// current one.
 			e = gateways.getEdge(zp[i - 1], zp[i]);
+
+			// The edge data will be a list of gateways;  pick
+			// one.
 			e = e.data[1];
+
+			// Add the path between the current vertex and
+			// the near-side gateway.  That's all the vertices
+			// in the path in the previous zone.
 			r.appendAll(findPath(v, e.src));
-			r.append(e.dst);
+			
+			// Make the far side gateway the current vertex.
 			v = e.dst;
 		}
 
-		//return(inherited(v0, v1));
+		// The loop above handles everything except the last
+		// zone.
+		if(v != v1) {
+			// If the current vertex--which will be the far side
+			// gateway from the perspective of the last-but-one
+			// zone--is NOT the destination vertex, add the path
+			// from it to the destination vertex.  This will be
+			// the path through the last zone.
+			r.appendAll(findPath(v, v1));
+		} else {
+			// If the current vertex IS the destination vertex,
+			// we just have to add it.
+			r.append(v);
+		}
+
 		return(r);
 	}
 ;

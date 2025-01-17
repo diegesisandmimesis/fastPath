@@ -74,8 +74,7 @@ gameMain: GameMainDef
 
 	newGame() {
 		pathfinder.createNextHopCache();
-		local l = pathfinder.findFastPath('start', 'exit');
-		pathfinder.gateways.log();
+		local l = pathfinder.findPath('start', 'exit');
 		"Path:\n ";
 		if(l == nil) {
 			"\n\tno path\n ";

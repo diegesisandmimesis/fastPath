@@ -34,7 +34,7 @@ gameMain: GameMainDef
 
 		//graph0.createNextHopCache();
 
-		if((p = graph0.findFastPath('in', 'out')) == nil) {
+		if((p = graph0.findPath('in', 'out')) == nil) {
 			"\nGot nil path\n ";
 			return;
 		}

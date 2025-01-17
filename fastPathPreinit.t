@@ -42,6 +42,8 @@ class FastPathPreinit: FastPathMap
 	// Object class we're using as vertices.
 	fastPathObjectClass = nil
 
+	fastPathIDBase = 'fastPathNode'
+
 	initializeFastPath() {
 		local v, z;
 
@@ -80,10 +82,36 @@ class FastPathPreinit: FastPathMap
 
 	}
 
-	fastPathGrouper(obj) { return(nil); }
+	fastPathGrouper(obj) {
+		if(obj == nil) return(nil);
+		return(new FastPathGroup(getFastPathZone(obj),
+			getFastPathID(obj)));
+	}
+
 	fastPathAddEdges(obj) {
 		if(!isVertex(obj)) return(nil);
 		return(true);
 	}
 
+	getFastPathZone(obj) {
+		if(obj == nil) return(nil);
+		return(obj.fastPathZone ? obj.fastPathZone : 'default');
+	}
+
+	getFastPathID(obj) {
+		local id, n;
+
+		if(obj == nil) return(nil);
+		if(obj.fastPathID != nil) return(obj.fastPathID);
+		n = getVertices().length();
+		id = fastPathIDBase + '#' + toString(n);
+		while(getVertex(id) != nil) {
+			n += 1;
+			id = fastPathIDBase + '#' + toString(n);
+		}
+
+		obj.fastPathID = id;
+
+		return(obj.fastPathID);
+	}
 ;

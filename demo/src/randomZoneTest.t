@@ -100,6 +100,7 @@ gameMain: GameMainDef
 
 	// Connect the individual PRNG map segments.
 	tweakMap() {
+		forEachInstance(Room, { x: x.fastPathID = x.name });
 		_connectMaps(fooMap, barMap);
 		_connectMaps(barMap, bazMap);
 	}
@@ -144,6 +145,7 @@ gameMain: GameMainDef
 	pickRandomRoomName() {
 		return(zoneNames[rand(zoneNames.length) + 1] + 'room'
 			+ toString(rand(100) + 1));
+		//return(pickRandomRoom().fastPathID);
 	}
 
 	// Returns a random room instance.
@@ -171,7 +173,8 @@ gameMain: GameMainDef
 			rm0 = pickRandomRoomName();
 			rm1 = pickRandomRoomName();
 			l = pathfinder.findPath(rm0, rm1);
-			if(l == nil) "ERROR: no path\n ";
+			if(!testPath(rm0, rm1, l))
+				"ERROR: pathfinding failed\n ";
 		});
 
 		// Compute the path repeatedly, choosing random
@@ -191,6 +194,16 @@ gameMain: GameMainDef
 		t0 = new BigNumber(t0);
 		t1 = new BigNumber(t1);
 		"Speedup of <<toString(((t1 / t0)).roundToDecimal(3))>>\n ";
+	}
+
+	testPath(rm0, rm1, lst) {
+		local v;
+
+		if(!lst || !lst.length()) {
+			return(nil);
+		}
+		if((v = pathfinder.getVertex(rm1)) == nil) return(nil);
+		return(v.vertexID == lst[lst.length].vertexID);
 	}
 ;
 

@@ -15,13 +15,14 @@ modify Room
 	fastPathID = nil		// vertex ID assigned by pathfinder
 	fastPathVertex = nil		// vertex assigned by pathfinder
 
+	// Method to enumerate all of the destinates reachable, by the
+	// given actor, from this room.
 	fastPathDestinationList(actor?, cb?) {
 		local c, dst, r;
 
 		r = new Vector(Direction.allDirections.length());
 
-		actor = (actor ? actor : gActor);
-		if(!actor) return(r);
+		if((actor = (actor ? actor : gActor)) == nil) return(r);
 
 		Direction.allDirections.forEach(function(d) {
 			if((c = getTravelConnector(d, actor)) == nil)
@@ -39,16 +40,30 @@ modify Room
 	}
 ;
 
+// Room pathfinder.
+// Creating an instance of this class will automagically enable
+// cached pathfinding.
 class RoomPathfinder: FastPathPreinit
+	// The kind of object we keep track of.
 	fastPathObjectClass = Room
+
+	// The default actor to use for pathfinding.
 	fastPathDefaultActor = (gameMain.initialPlayerChar)
 
+	// Associate a room with a zone.
 	fastPathGrouper(obj) {
 		if(!isRoom(obj)) return(nil);
 		return(new FastPathGroup(
 			(obj.fastPathZone ? obj.fastPathZone : 'default'),
 			(obj.fastPathID ? obj.fastPathID : obj.name)));
+		//return(inherited(obj));
 	}
+/*
+	fastPathGrouper(obj) {
+		if(!isRoom(obj)) return(nil);
+		return(inherited(obj));
+	}
+*/
 
 	fastPathAddEdges(obj, actor?) {
 		if(!isVertex(obj) || !isRoom(obj.data)) return;
