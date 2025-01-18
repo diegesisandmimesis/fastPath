@@ -34,10 +34,12 @@ gameMain: GameMainDef
 	newGame() {
 		local l;
 
+		"\n<.p>\n ";
+
 		pathfinder.createNextHopCache();
 		//local l = pathfinder.findPath('start', 'exit');
 		l = pathfinder.findPath(startRoom, exitRoom);
-		"Path:\n ";
+		"\nPath:\n ";
 		if(l == nil) {
 			"\n\tno path\n ";
 			return;

@@ -8,5 +8,5 @@
 #include "fastPath.h"
 
 class FastPathEdge: DirectedEdge
-	data = nil
+	data = nil		// This is to hold our gateways
 ;

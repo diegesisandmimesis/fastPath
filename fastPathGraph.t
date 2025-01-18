@@ -14,23 +14,34 @@ class FastPathGraph: DirectedGraph
 	// If true, cache will be created if it doesn't already exist
 	autoCreateFastPathCache = true
 
+	// In the base class all we have to do is create the next hop
+	// caches for each vertex.
 	createNextHopCache() {
-		local l;
-
-		l = getVertices();
-		l.forEach({ x : _createNextHopCacheForVertex(x, l) });
+		getVertices().forEach({ x : _createNextHopCacheForVertex(x) });
 	}
 
+	// Create a next-hop cache for the given vertex.
+	// Second arg is the list of all destinations to create next-hop
+	// data for.
 	_createNextHopCacheForVertex(v0, lst?) {
 		local p; 
 
-		if(lst == nil) lst = getVertices();
+		// If we don't have an explicit list, it's all the vertices
+		// in the graph.
+		if(lst == nil)
+			lst = getVertices();
+
+		// Go through each vertex in the list and compute the (full)
+		// path from the start vertex to it.  Then we remember
+		// just the first step (the next hop from v0).
 		lst.forEach(function(v1) {
 			if(v0 == v1) return;
 			if((p = getDijkstraPath(v0, v1)) == nil) return;
 			if(p.length < 2) return;
 			v0.setNextHop(v1, getVertex(p[2]));
 		});
+
+		// Mark the cache as clean.
 		v0.nextHopCacheDirty = nil;
 	}
 

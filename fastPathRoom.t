@@ -18,6 +18,7 @@ modify Room
 	// Method to enumerate all of the destinates reachable, by the
 	// given actor, from this room.
 	fastPathDestinationList(actor?, cb?) {
+		//local c, dst, i, lst, r;
 		local c, dst, r;
 
 		r = new Vector(Direction.allDirections.length());
@@ -31,13 +32,75 @@ modify Room
 				return;
 			if((dst = c.getDestination(self, actor)) == nil)
 				return;
+
+			if(!_checkFastPathConnector(actor, c, dst))
+				return;
+
 			if((cb != nil) && ((cb)(d, dst) != true))
 				return;
+
 			r.append(dst);
 		});
 
 		return(r);
 	}
+
+	_checkFastPathConnector(actor, conn, dst) {
+		local r, tr;
+
+		tr = gTranscript;
+
+		try {
+			savepoint();
+
+			gTranscript = new CommandTranscript();
+			fastPathFilter.active = true;
+
+			actor.moveInto(self);
+			newActorAction(actor, TravelVia, conn);
+
+			if(actor.location == dst)
+				r = true;
+		}
+
+		catch(Exception e) {
+			r = nil;
+		}
+
+		finally {
+			undo();
+			gTranscript = tr;
+			fastPathFilter.active = nil;
+			return(r == true);
+		}
+	}
+
+/*
+	_checkFastPathConnector(actor, d, cb?) {
+		//local c, i, dst, lst;
+		local c, dst;
+
+		// Get the connector.
+		if((c = getTravelConnector(d, actor)) == nil)
+			return(nil);
+
+		// Make sure it's apparent to the traveler.
+		if(!c.isConnectorApparent(self, actor))
+			return(nil);
+
+		// Get the connector's destination.
+		if((dst = c.getDestination(self, actor)) == nil)
+			return(nil);
+
+		//if(!c.canonicalTravelRuling(actor))
+			//return(nil);
+
+		if((cb != nil) && ((cb)(d, dst) != true))
+			return(nil);
+
+		return(dst);
+	}
+*/
 ;
 
 // Room pathfinder.
@@ -51,21 +114,18 @@ class RoomPathfinder: FastPathMap, FastPathPreinit
 	fastPathDefaultActor = (gameMain.initialPlayerChar)
 
 	// Associate a room with a zone.
+/*
 	fastPathGrouper(obj) {
 		if(!isRoom(obj)) return(nil);
 		return(new FastPathGroup(
 			getFastPathZone(obj),
-			//(obj.fastPathZone ? obj.fastPathZone : 'default'),
 			getFastPathID(obj)));
-			//(obj.fastPathID ? obj.fastPathID : obj.name)));
-		//return(inherited(obj));
 	}
-/*
+*/
 	fastPathGrouper(obj) {
 		if(!isRoom(obj)) return(nil);
 		return(inherited(obj));
 	}
-*/
 
 	fastPathAddEdges(obj, actor?) {
 		if(!isVertex(obj) || !isRoom(obj.data)) return;
@@ -98,4 +158,40 @@ class RoomPathfinder: FastPathMap, FastPathPreinit
 		}
 		return(lst[lst.length()] == v1);
 	}
+;
+
+/*
+modify TravelConnector
+	canonicalTravelRuling(actor) {
+		if(!canTravelerPass(actor))
+			return(nil);
+
+		if(!_fastTravelPrecond(actor)) return(nil);
+		if(!_fastTravelVerify(actor)) return(nil);
+		if(!_fastTravelCheck(actor)) return(nil);
+		lst = c.travelBarrier;
+		if(!isCollection(lst)) lst = [ lst ];
+		for(i = 1; i <= lst.length; i++) {
+			if(!lst[i].canTravelerPass(actor))
+				return(nil);
+		}
+	}
+	_fastTravelPrecond(actor) {
+		local l;
+
+		l = actor.getTraveler(self).travelerPreCond(self)
+			+ actor.location.roomTravelPreCond()
+			+ _fastTravelConnectorTravelPreCond(actor)
+	}
+	_fastTravelVerify(actor) {
+	}
+	_fastTravelCheck(actor) {
+	}
+;
+*/
+
+fastPathFilter: OutputFilter, PreinitObject
+	active = nil
+	filterText(str, val) { return(active ? '' : inherited(str, val)); }
+	execute() { mainOutputStream.addOutputFilter(self); }
 ;
