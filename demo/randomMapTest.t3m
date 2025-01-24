@@ -6,7 +6,7 @@
 -o games/randomMapTest.t3
 -lib system
 -lib adv3/adv3
--lib dataStructures/dataStructures
+-lib dataTypes/dataTypes
 -lib simpleRandomMap/simpleRandomMap
 -lib ../fastPath
 -source src/randomMapTest.t

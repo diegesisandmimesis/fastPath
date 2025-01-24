@@ -1,6 +1,6 @@
 #charset "us-ascii"
 //
-// randomMapTest.t
+// perfTest.t
 // Version 1.0
 // Copyright 2022 Diegesis & Mimesis
 //
@@ -8,7 +8,7 @@
 //
 // It can be compiled via the included makefile with
 //
-//	# t3make -f randomMapTest.t3m
+//	# t3make -f perfTest.t3m
 //
 // ...or the equivalent, depending on what TADS development environment
 // you're using.
@@ -93,9 +93,9 @@ gameMain: GameMainDef
 		pathfinder.addEdge(rm1.name, rm0.name);
 	}
 
-	// Connect the two PRNG maps, 100th room of map0 to 1st room of map1.
+	// Connect the two PRNG maps, last room of map0 to 1st room of map1.
 	_connectMaps(map0, map1) {
-		_connectRoom(map0._getRoom(100), map1._getRoom(1));
+		_connectRoom(map0._getRoom(map0._mapSize), map1._getRoom(1));
 	}
 
 	// Connect the individual PRNG map segments.
@@ -141,18 +141,14 @@ gameMain: GameMainDef
 		return(r);
 	}
 
-	// Pick a random room name.
-	pickRandomRoomName() {
-		return(zoneNames[rand(zoneNames.length) + 1] + 'room'
-			+ toString(rand(100) + 1));
-		//return(pickRandomRoom().fastPathID);
-	}
-
 	// Returns a random room instance.
 	// This relies on the SimpleRandomMap._getRoom() method provided
 	// by the simpleRandomMap module.
 	pickRandomRoom() {
-		return(zones[rand(zones.length) + 1]._getRoom(rand(100) + 1));
+		local z;
+
+		z = zones[rand(zones.length) + 1];
+		return(z._getRoom(rand(z._mapSize) + 1));
 	}
 
 	newGame() {

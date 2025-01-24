@@ -8,11 +8,11 @@
 #include "fastPath.h"
 
 class FastPathGraph: DirectedGraph
-	vertexClass = FastPathVertex
-	edgeClass = FastPathEdge
-
 	// If true, cache will be created if it doesn't already exist
 	autoCreateFastPathCache = true
+
+	vertexClass = FastPathVertex
+	edgeClass = FastPathEdge
 
 	// In the base class all we have to do is create the next hop
 	// caches for each vertex.
@@ -57,7 +57,7 @@ class FastPathGraph: DirectedGraph
 		return(v0.getNextHop(v1.vertexID));
 	}
 
-	findPathInSingleZone(v0, v1) {
+	findPathInSingleZone(v0, v1, n?) {
 		local r, v;
 
 		if((v0 = canonicalizeVertex(v0)) == nil) return([]);
@@ -77,7 +77,7 @@ class FastPathGraph: DirectedGraph
 		return(r);
 	}
 
-	findPath(v0, v1) { return(findPathInSingleZone(v0, v1)); }
+	findPath(v0, v1, n?) { return(findPathInSingleZone(v0, v1, n)); }
 
 	testPath(v0, v1, lst) {
 		if(!lst || !lst.length) return(nil);

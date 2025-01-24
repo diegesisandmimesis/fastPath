@@ -144,6 +144,11 @@ class FastPathMap: FastPathGraph
 		return(obj.fastPathID);
 	}
 
+	clearNextHopCache() {
+		inherited();
+		gateways = nil;
+	}
+
 	createNextHopCache() {
 		local id, t;
 
@@ -257,7 +262,7 @@ class FastPathMap: FastPathGraph
 	findPath(v0, v1) { return(findPathWithZones(v0, v1)); }
 
 	// Zone-aware pathfinding routine.
-	findPathWithZones(v0, v1) {
+	findPathWithZones(v0, v1, n?) {
 		local e, i, r, v, z0, z1, zp;
 
 		// Make sure the inputs are valid.
@@ -268,7 +273,7 @@ class FastPathMap: FastPathGraph
 		// default (non-zone-aware) method.
 		if(v0.data && v1.data
 			&& (v0.data.fastPathZone == v1.data.fastPathZone))
-			return(findPathInSingleZone(v0, v1));
+			return(findPathInSingleZone(v0, v1, n));
 
 		// Make sure both zones exists.
 		if((z0 = gateways.getVertex(v0.data.fastPathZone)) == nil)
@@ -277,7 +282,7 @@ class FastPathMap: FastPathGraph
 			return([]);
 
 		// Get a path through the zones.
-		if((zp = gateways.findPath(z0, z1)) == nil) return([]);
+		if((zp = gateways.findPath(z0, z1, n)) == nil) return([]);
 
 		// To hold the path.
 		r = new Vector();
@@ -299,7 +304,7 @@ class FastPathMap: FastPathGraph
 			// Add the path between the current vertex and
 			// the near-side gateway.  That's all the vertices
 			// in the path in the previous zone.
-			r.appendAll(findPathInSingleZone(v, e.src));
+			r.appendAll(findPathInSingleZone(v, e.src, n));
 			
 			// Make the far side gateway the current vertex.
 			v = e.dst;
@@ -313,7 +318,7 @@ class FastPathMap: FastPathGraph
 			// zone--is NOT the destination vertex, add the path
 			// from it to the destination vertex.  This will be
 			// the path through the last zone.
-			r.appendAll(findPathInSingleZone(v, v1));
+			r.appendAll(findPathInSingleZone(v, v1, n));
 		} else {
 			// If the current vertex IS the destination vertex,
 			// we just have to add it.

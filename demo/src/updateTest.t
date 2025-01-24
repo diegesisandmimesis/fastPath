@@ -73,16 +73,17 @@ gameMain: GameMainDef
 		local l;
 
 		pathfinder.createNextHopCache();
-		//local l = pathfinder.findPath('start', 'exit');
 		l = pathfinder.findPath(startRoom, exitRoom);
 		"Path:\n ";
-		if(l == nil) {
-			"\n\tno path\n ";
-			return;
-		}
-		l.forEach(function(o) {
-			"\n\t<<toString(o.name)>>\n ";
-		});
+		l.forEach({ x: "\n\t<<toString(x.name)>>\n " });
+		shortcutPass.makeLocked(nil);
+
+		pathfinder.clearNextHopCache();
+		pathfinder.initializeFastPath();
+		pathfinder.createNextHopCache();
+		l = pathfinder.findPath(startRoom, exitRoom);
+		"Path:\n ";
+		l.forEach({ x: "\n\t<<toString(x.name)>>\n " });
 	}
 ;
 
@@ -157,3 +158,5 @@ modify TravelConnector
 	}
 ;
 */
+
+class Foozle: object;

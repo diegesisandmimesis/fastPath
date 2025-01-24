@@ -33,4 +33,4 @@ fastPathInit: PreinitObject
 ;
 
 // Just a mixin for pathfinders that want preinit.
-class FastPathPreinit: object;
+class FastPathPreinit: object initializeFastPath() {};

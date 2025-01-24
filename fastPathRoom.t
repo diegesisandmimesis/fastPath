@@ -74,33 +74,6 @@ modify Room
 			return(r == true);
 		}
 	}
-
-/*
-	_checkFastPathConnector(actor, d, cb?) {
-		//local c, i, dst, lst;
-		local c, dst;
-
-		// Get the connector.
-		if((c = getTravelConnector(d, actor)) == nil)
-			return(nil);
-
-		// Make sure it's apparent to the traveler.
-		if(!c.isConnectorApparent(self, actor))
-			return(nil);
-
-		// Get the connector's destination.
-		if((dst = c.getDestination(self, actor)) == nil)
-			return(nil);
-
-		//if(!c.canonicalTravelRuling(actor))
-			//return(nil);
-
-		if((cb != nil) && ((cb)(d, dst) != true))
-			return(nil);
-
-		return(dst);
-	}
-*/
 ;
 
 // Room pathfinder.
@@ -114,14 +87,6 @@ class RoomPathfinder: FastPathMap, FastPathPreinit
 	fastPathDefaultActor = (gameMain.initialPlayerChar)
 
 	// Associate a room with a zone.
-/*
-	fastPathGrouper(obj) {
-		if(!isRoom(obj)) return(nil);
-		return(new FastPathGroup(
-			getFastPathZone(obj),
-			getFastPathID(obj)));
-	}
-*/
 	fastPathGrouper(obj) {
 		if(!isRoom(obj)) return(nil);
 		return(inherited(obj));
@@ -136,13 +101,13 @@ class RoomPathfinder: FastPathMap, FastPathPreinit
 		});
 	}
 
-	findPath(v0, v1) {
+	findPath(v0, v1, n?) {
 		local l, r;
 
 		if(isRoom(v0) && v0.fastPathVertex) v0 = v0.fastPathVertex;
 		if(isRoom(v1) && v1.fastPathVertex) v1 = v1.fastPathVertex;
 
-		l = findPathWithZones(v0, v1);
+		l = findPathWithZones(v0, v1, n);
 
 		r = new Vector(l.length());
 		l.forEach({ x: r.append(x.data) });

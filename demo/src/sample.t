@@ -32,8 +32,6 @@ gameMain: GameMainDef
 	newGame() {
 		local p;
 
-		//graph0.createNextHopCache();
-
 		if((p = graph0.findPath('in', 'out')) == nil) {
 			"\nGot nil path\n ";
 			return;
