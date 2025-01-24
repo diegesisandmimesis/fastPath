@@ -6,6 +6,15 @@
 //
 // This is a very simple demonstration "game" for the fastPath library.
 //
+// It features a hundred rooms and a hundred actors.  Each actor picks a
+// random other actor they want to reach.  Each turn every actor
+// evaluates an agenda that (probably) causes them to move toward their
+// chosen other actor.
+//
+// The room description in every room reports the room that currently
+// has the most actors in it, and the move the player should take to
+// reach it.
+//
 // It can be compiled via the included makefile with
 //
 //	# t3make -f activeTest.t3m
@@ -78,6 +87,12 @@ gameMain: GameMainDef
 	// by the simpleRandomMap module.
 	pickRandomRoom() { return(map._getRoom(rand(map._mapSize) + 1)); }
 
+	// Wrapper around pathfinding method.
+	// We do this so it's easier to swap methods for a/b testing.
+	findPath(a, rm0, rm1) { return(pathfinder.findPath(rm0, rm1)); }
+	//findPath(a, rm0, rm1)
+		//{ return(roomPathFinder.findPath(a, rm0, rm1)); }
+
 	newGame() {
 		local a, g, i, rm;
 
@@ -135,17 +150,15 @@ gameMain: GameMainDef
 
 me: Person;
 
-//class DemoActor: Person 'alice' 'Alice'
 class DemoActor: Person
 	desc = "She looks like the <<spellIntOrdinal(actorNumber)>> person
 		you'd turn to in a problem. "
 	isHer = true
 	isProperName = true
 
-	actorNumber = nil
+	actorNumber = nil	// number from 1 to 100
 
-	target = nil
-
+	// Set our name based on our number.
 	setActorNumber(n) {
 		actorNumber = n;
 		name = _demoNames[n];
@@ -153,15 +166,15 @@ class DemoActor: Person
 	}
 ;
 
+// Agenda to seek out a randomly-selected actor.
 class DemoAgenda: AgendaItem
 	initiallyActive = true
 	isReady = true
 
-	lastRoom = nil
+	lastRoom = nil		// previous room we were in
+	targetActor = nil	// actor we're looking for
 
-	targetActor = nil
-
-	// Pick a random actor and make them the target.
+	// Pick a random actor to look for.
 	setTarget() {
 		local a, i;
 
@@ -178,7 +191,7 @@ class DemoAgenda: AgendaItem
 		return(true);
 	}
 
-	// Get the room containing our target.
+	// Get the room containing the actor we're looking for.
 	getTargetRoom() {
 		if(targetActor == nil) return(nil);
 		return(targetActor.getOutermostRoom());
@@ -186,6 +199,9 @@ class DemoAgenda: AgendaItem
 
 	invokeItem() {
 		local a, d, l, rm0, rm1;
+
+		// Base 25% chance of doing nothing any turn.
+		if((rand(100) + 1) <= 25) return;
 
 		// Make sure we have an actor and they're in a room.
 		if((a = getActor()) == nil) return;
@@ -200,17 +216,17 @@ class DemoAgenda: AgendaItem
 		// If we're in the target room, nothing to do.
 		if(rm0 == rm1) return;
 
-		l = pathfinder.findPath(rm0, rm1);
+		// Get the path from our current location to our
+		// target's current location.
+		l = gameMain.findPath(a, rm0, rm1);
 		if(l.length < 2) return;
 
-		// If our current destination is the room we occupied
-		// last turn, give it a 50/50 chance to stay put.  This
-		// is to damp occilations where everybody is chasing
+		// If our current destination is the room we came from,
+		// give it a 50/50 chance to stay put.  This is to damp
+		// occilations where everybody is chasing
 		// each other back and forth between the same two rooms.
-		if((l[2] == lastRoom) && ((rand(10) + 1) < 5)) {
-			lastRoom = rm0;
+		if((l[2] == lastRoom) && ((rand(10) + 1) <= 5))
 			return;
-		}
 
 		if((d = rm0.getConnectorTo(l[2], a)) == nil) return;
 
@@ -248,12 +264,13 @@ class DemoRoom: SimpleRandomMapRoom
 			return('to errorland');
 		rm0 = me.getOutermostRoom();
 		if(rm0 == rm1) return('nowhere');
-		l = pathfinder.findPath(rm0, rm1);
+		l = gameMain.findPath(me, rm0, rm1);
 		if(l.length < 2) return('nowhere fast');
 		if((c = rm0.getDirTo(l[2], me)) == nil)
 			return('into the void');
 		return(toString(c.dirProp));
 	}
+
 ;
 
 pathfinder: RoomPathfinder;
