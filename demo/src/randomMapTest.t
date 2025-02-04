@@ -43,7 +43,7 @@ gameMain: GameMainDef
 	newGame() {
 		local l, rm0, rm1;
 
-		pathfinder.createNextHopCache();
+		pathfinder.createFastPathCache();
 		rm0 = pickRandomRoom();
 		rm1 = pickRandomRoom();
 		l = pathfinder.findPath(rm0, rm1);

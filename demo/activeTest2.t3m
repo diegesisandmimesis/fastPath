@@ -3,11 +3,14 @@
 -D SIMPLE_RANDOM_MAP
 -Fy obj -Fo obj
 -Fs ../..
--o games/zoneTest.t3
+-o games/activeTest2.t3
 -lib system
 -lib adv3/adv3
 -lib dataTypes/dataTypes
 -lib asyncEvent/asyncEvent
+-lib simpleRandomMap/simpleRandomMap
 -lib ../fastPath
--source src/zoneTest.t
+-source src/activeTest2.t
+-source src/activeTestNames.t
 -source reflect.t
+-source extensions/pathfind.t

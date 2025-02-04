@@ -78,6 +78,13 @@ gameMain: GameMainDef
 
 	actors = perInstance(new Vector())
 
+	zoneNames = static [ 'ne', 'nw', 'se', 'sw' ]
+	zones = static [ neMap, nwMap, seMap, swMap ]
+
+	doorList = perInstance(new Vector())
+
+	doorDaemon = nil
+
 	// For caching which room has the most actors in it.
 	_mainRoomTimestamp = nil
 	_mainRoom = nil
@@ -85,7 +92,76 @@ gameMain: GameMainDef
 	// Returns a random room instance.
 	// This relies on the SimpleRandomMap._getRoom() method provided
 	// by the simpleRandomMap module.
-	pickRandomRoom() { return(map._getRoom(rand(map._mapSize) + 1)); }
+	pickRandomRoom() {
+		local z;
+		z = zones[rand(zones.length) + 1];
+		return(z._getRoom(rand(z._mapSize) + 1));
+	}
+
+	_createDoorPair(rm0, prop0, rm1, prop1) {
+		local d0, d1;
+
+		d0 = new DemoDoor();
+		d1 = new DemoDoor();
+
+		d1.masterObject = d0;
+
+		d0.moveInto(rm0);
+		d1.moveInto(rm1);
+
+		d0.initializeThing();
+		d1.initializeThing();
+
+		d0.makeLocked(nil);
+
+		doorList.append(d0);
+
+		rm0.(prop0) = d0;
+		rm1.(prop1) = d1;
+	}
+
+	_connectRoomNorthSouth(rm0, rm1) {
+		_createDoorPair(rm0, &north, rm1, &south);
+
+		pathfinder.addEdge(rm0.getFastPathID(), rm1.getFastPathID());
+		pathfinder.addEdge(rm1.getFastPathID(), rm0.getFastPathID());
+	}
+
+	_connectRoomEastWest(rm0, rm1) {
+		_createDoorPair(rm0, &east, rm1, &west);
+
+		pathfinder.addEdge(rm0.getFastPathID(), rm1.getFastPathID());
+		pathfinder.addEdge(rm1.getFastPathID(), rm0.getFastPathID());
+	}
+
+	_connectMapsNorthSouth(map0, map1) {
+		_connectRoomNorthSouth(
+			map0._getRoom(map0._mapSize - map0.mapWidth + 1),
+			map1._getRoom(1)
+		);
+		_connectRoomNorthSouth(
+			map0._getRoom(map0._mapSize),
+			map1._getRoom(map1.mapWidth)
+		);
+	}
+
+	_connectMapsEastWest(map0, map1) {
+		_connectRoomEastWest(
+			map0._getRoom(map0.mapWidth),
+			map1._getRoom(1)
+		);
+		_connectRoomEastWest(
+			map0._getRoom(map0._mapSize),
+			map1._getRoom(map1._mapSize - map1.mapWidth + 1)
+		);
+	}
+
+	tweakMap() {
+		_connectMapsNorthSouth(seMap, neMap);
+		_connectMapsNorthSouth(swMap, nwMap);
+		_connectMapsEastWest(nwMap, neMap);
+		_connectMapsEastWest(swMap, seMap);
+	}
 
 	// Wrapper around pathfinding method.
 	// We do this so it's easier to swap methods for a/b testing.
@@ -93,17 +169,60 @@ gameMain: GameMainDef
 	//findPath(a, rm0, rm1)
 		//{ return(roomPathFinder.findPath(a, rm0, rm1)); }
 
+	timeCache() {
+		local ts;
+
+		pathfinder.clearFastPathCache();
+		ts = getTimestamp();
+		pathfinder.createFastPathCache();
+		aioSay('\ncache creation took <<toString(getInterval(ts))>>
+			seconds. \n');
+	}
+
+	getTimestamp() { return(new Date()); }
+	getInterval(d) { return(((new Date() - d) * 86400).roundToDecimal(5)); }
+
+	toggleDoors() {
+		local d0, d1, i;
+
+		for(i = 2; i <= doorList.length; i += 2) {
+			if((rand(100) + 1) < 90) continue;
+			if((rand(100) + 1) < 50) {
+				d0 = doorList[i];
+				d1 = doorList[i - 1];
+			} else {
+				d0 = doorList[i - 1];
+				d1 = doorList[i];
+			}
+			d0.makeLocked(true);
+			d1.makeLocked(nil);
+
+			pathfinder.updatePathfinder(d0);
+		}
+		//pathfinder.resetFastPathCache();
+	}
+
 	newGame() {
+		tweakMap();
+
+		timeCache();
+
+		zones.forEach({ x: _addActors(x) });
+
+		doorDaemon = new Daemon(self, &toggleDoors, 1);
+
+		inherited();
+	}
+
+	_addActors(z) {
 		local a, g, i, rm;
 
-		// Create a new actor for each room in the random map.
-		for(i = 1; i <= map._mapSize; i++) {
-			// Pick a random room.
-			rm = map._getRoom(rand(map._mapSize) + 1);
+		for(i = 1; i <= z._mapSize; i++) {
+			rm = z._getRoom(i);
 
 			a = new DemoActor();	// create new actor
 			a.initializeActor();	// IMPORTANT:  adv3 needs this
-			a.setActorNumber(i);	// set the actor number
+			a.setActorNumber(i, z);	// set the actor number
 			a.moveInto(rm);		// move to random room
 
 			g = new DemoAgenda();	// create the travel agenda
@@ -112,13 +231,11 @@ gameMain: GameMainDef
 
 			actors.append(a);	// bookkeeping
 		}
-
-		inherited();
 	}
 
 	// Figure out which room has the most actors in it.
 	getMainRoom() {
-		local i, max, mrm, rm, ts, v;
+		local max, mrm, ts, v;
 
 		ts = libGlobal.totalTurns;
 		if((_mainRoomTimestamp == ts) && (_mainRoom != nil))
@@ -127,10 +244,8 @@ gameMain: GameMainDef
 		_mainRoomTimestamp = ts;
 		
 		max = 0;
-		for(i = 1; i <= map._mapSize; i++) {
+		forEachInstance(Room, function(rm) {
 			v = 0;
-			if((rm = map._getRoom(i)) == nil) continue;
-
 			rm.contents.forEach(function(o) {
 				if(!o.ofKind(DemoActor)) return;
 				v += 1;
@@ -140,7 +255,7 @@ gameMain: GameMainDef
 				max = v;
 				mrm = rm;
 			}
-		}
+		});
 
 		_mainRoom = mrm;
 
@@ -159,9 +274,9 @@ class DemoActor: Person
 	actorNumber = nil	// number from 1 to 100
 
 	// Set our name based on our number.
-	setActorNumber(n) {
+	setActorNumber(n, z) {
 		actorNumber = n;
-		name = _demoNames[n];
+		name = _demoNames[n] + ' ' + z.name;
 		cmdDict.addWord(self, _demoNames[n].toLower(), &noun);
 	}
 ;
@@ -241,8 +356,8 @@ class DemoRoom: SimpleRandomMapRoom
 	turnTimestamp = nil
 	_mainRoom = nil
 
-	desc = "This is a simple random room.  Its coordinates are
-		<<getCoords()>>.
+	desc = "This is a room in the <<toString(fastPathZone.toUpper())>>
+		zone.  Its coordinates are <<getCoords()>>.
 		<.p>
 		The room with the most actors is currently <<mainRoom()>>.
 		To reach it, go <<directionToMainRoom()>>. "
@@ -252,7 +367,7 @@ class DemoRoom: SimpleRandomMapRoom
 		local rm;
 
 		if((rm = gameMain.getMainRoom()) == nil) return('unknown');
-		return(rm.name);
+		return(rm.name + ', zone ' + rm.fastPathZone.toUpper());
 	}
 
 	// Returns the name of the direction that leads to the room with
@@ -274,7 +389,6 @@ class DemoRoom: SimpleRandomMapRoom
 ;
 
 pathfinder: RoomPathfinder;
-map: SimpleRandomMapGenerator roomClass = DemoRoom;
 
 // Action that displays a crude ASCII map of the population density
 // of the rooms:  a "." represents an empty room and the numerals 0-9
@@ -282,35 +396,81 @@ map: SimpleRandomMapGenerator roomClass = DemoRoom;
 // included in the count.
 DefineIAction(ActorMap)
 	execAction() {
-		local idx, n, rm, tmp, x, y;
+		local i, j, l, tmp, y, zones;
 
-		map.clearFastPathCache();
-		map.createFastPathCache();
+		gameMain.timeCache();
+
+		zones = [ [ nwMap, neMap ], [ swMap, seMap ] ];
 
 		tmp = new StringBuffer();
-		for(y = 9; y >= 0; y--) {
-			for(x = 1; x <= 10; x++) {
-				idx = (y * 10) + x;
-				rm = map._getRoom(idx);
-				n = 0;
-				rm.contents.forEach(function(o) {
-					if(!o.ofKind(DemoActor)) return;
-					n += 1;
-				});
-				if(n == 0) {
-					tmp.append('.');
-				} else {
-					n /= 10;
-					if(n > 9) n = 9;
-					tmp.append(toString(n));
+
+		for(i = zones.length; i >= 1; i--) {
+			l = zones[i];
+			for(y = l[1].mapWidth - 1; y >= 0; y--) {
+				for(j = 1; j <= l.length; j++) {
+					tmp.append(getMapLine(y, l[j]));
 				}
+				tmp.append('\n ');
 			}
-			tmp.append('\n ');
 		}
 		"\n<<toString(tmp)>>\n ";
+	}
+
+	getMapLine(y, zone) {
+		local x, txt;
+
+		txt = new StringBuffer();
+		for(x = 1; x <= zone.mapWidth; x++) {
+			txt.append(getMapTile(x, y, zone));
+		}
+
+		return(toString(txt));
+	}
+
+	getMapTile(x, y, zone) {
+		local idx, n, rm;
+
+		idx = (y * zone.mapWidth) + x;
+		if((rm = zone._getRoom(idx)) == nil) {
+			aioSay('\nERROR:  nil room, <<toString(idx)>> in
+				zone <<toString(zone)>>\n ');
+			return('x');
+		}
+		n = 0;
+		rm.contents.forEach(function(o) {
+			if(!o.ofKind(DemoActor)) return;
+			n += 1;
+		});
+
+		if(n == 0)
+			return('.');
+
+		n /= ((zone._mapSize) * gameMain.zones.length / 10);
+		if(n > 9)
+			n = 9;
+
+		return(toString(n));
 	}
 ;
 VerbRule(ActorMap)
 	'actor' 'map' : ActorMapAction
 	verbPhrase = 'map/mapping actors'
 ;
+
+class NERoom: DemoRoom fastPathZone = 'ne';
+class NWRoom: DemoRoom fastPathZone = 'nw';
+class SERoom: DemoRoom fastPathZone = 'se';
+class SWRoom: DemoRoom fastPathZone = 'sw';
+
+class DemoMapGenerator: SimpleRandomMapGenerator
+	mapWidth = 3
+;
+
+swMap: DemoMapGenerator name = 'SouthWest' roomClass = SWRoom;
+seMap: DemoMapGenerator name = 'SouthEast' roomClass = SERoom movePlayer = nil;
+neMap: DemoMapGenerator name = 'NorthEast' roomClass = NERoom movePlayer = nil;
+nwMap: DemoMapGenerator name = 'NorthWest' roomClass = NWRoom
+	movePlayer = nil;
+
+
+class DemoDoor: IndirectLockable, AutoClosingDoor 'door' 'door';

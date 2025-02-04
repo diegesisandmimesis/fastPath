@@ -72,17 +72,25 @@ gameMain: GameMainDef
 	newGame() {
 		local l;
 
-		pathfinder.createNextHopCache();
+		pathfinder.createFastPathCache();
 		l = pathfinder.findPath(startRoom, exitRoom);
-		"Path:\n ";
+		"Path with locked door:\n ";
 		l.forEach({ x: "\n\t<<toString(x.name)>>\n " });
+
+		// Unlock the door.
 		shortcutPass.makeLocked(nil);
 
-		pathfinder.clearNextHopCache();
-		pathfinder.initializeFastPath();
-		pathfinder.createNextHopCache();
+		pathfinder.resetFastPathCache();
 		l = pathfinder.findPath(startRoom, exitRoom);
-		"Path:\n ";
+		"Path with unlocked door:\n ";
+		l.forEach({ x: "\n\t<<toString(x.name)>>\n " });
+
+		// Lock the door again.
+		shortcutPass.makeLocked(true);
+
+		pathfinder.resetFastPathCache();
+		l = pathfinder.findPath(startRoom, exitRoom);
+		"Path with locked door:\n ";
 		l.forEach({ x: "\n\t<<toString(x.name)>>\n " });
 	}
 ;
@@ -108,10 +116,6 @@ foo5: Foo 'foo5' east = bar1 west = foo4 north = shortcutPass;
 	dobjFor(Unlock) {
 		check() {}
 		verify() {}
-		action() {
-			//shortcutPass.makeLocked(nil);
-			inherited();
-		}
 	}
 ;
 
@@ -121,42 +125,3 @@ bar3: Bar 'bar3' east = exitRoom west = bar2;
 
 exitRoom: Room 'exit' "This is the exit room." fastPathZone = 'exit'
 	west = bar3;
-
-/*
-modify TravelConnector
-	dobjFor(TravelVia) {
-		preCond() {
-			aioSay('\n===preCond 1===\n ');
-			inherited();
-			aioSay('\n===preCond 2===\n ');
-		}
-		verify() {
-			aioSay('\n===verify 1===\n ');
-			inherited();
-			aioSay('\n===verify 2===\n ');
-		}
-		check() {
-			aioSay('\n===check 1===\n ');
-			inherited();
-			aioSay('\n===check 2===\n ');
-		}
-		action() {
-			aioSay('\n===action 1===\n ');
-			inherited();
-			aioSay('\n===action 2===\n ');
-		}
-	}
-	connectorTravelPreCond() {
-		local r;
-
-		aioSay('\n==connectorTravelPreCond()==\n ');
-		r = inherited();
-		r.forEach(function(o) {
-			aioSay('\n\t<<toString(o)>>\n ');
-		});
-		return(r);
-	}
-;
-*/
-
-class Foozle: object;

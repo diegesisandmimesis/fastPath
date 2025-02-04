@@ -109,10 +109,10 @@ gameMain: GameMainDef
 	timeCache() {
 		local ts;
 
-		pathfinder.clearNextHopCache();
+		pathfinder.clearFastPathCache();
 		t3RunGC();
 		ts = getTimestamp();
-		pathfinder.createNextHopCache();
+		pathfinder.createFastPathCache();
 		"Creating cache took <<toString(getInterval(ts))>> seconds.\n ";
 	}
 
