@@ -35,8 +35,6 @@ gameMain: GameMainDef
 		local l;
 
 		"\n<.p>\n ";
-
-		pathfinder.initializeFastPathMap();
 pathfinder.log();
 		pathfinder.createFastPathCache();
 		//local l = pathfinder.findPath('start', 'exit');

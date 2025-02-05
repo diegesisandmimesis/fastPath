@@ -147,9 +147,11 @@ class FastPathMap: FastPathGraph
 
 		return(v.data);
 	}
+
 	getZone(id) {
 		local z;
 
+		if(isZone(id)) id = id.fastPathZoneID;
 		if((z = getVertex(id)) == nil) return(nil);
 		return(z.data);
 	}
@@ -163,6 +165,7 @@ class FastPathMap: FastPathGraph
 		
 		return(removeVertex(id));
 	}
+
 	getZones() {
 		local l;
 
@@ -179,8 +182,8 @@ class FastPathMap: FastPathGraph
 
 	canonicalizeZone(z) {
 		if(z == nil) return(nil);
-		if(z.ofKind(FastPathZone)) return(getVertex(z.fastPathZoneID));
-		return(getVertex(z));
+		if(z.ofKind(FastPathZone)) return(getZone(z.fastPathZoneID));
+		return(getZone(z));
 	}
 
 	// Like canonicalizeVertex(), but we search all our zones for the
@@ -202,17 +205,28 @@ class FastPathMap: FastPathGraph
 	findMultiZonePath(v0, v1) {
 		local d0, d1, g, i, p, r, v, z0, z1, zp;
 
+		// If the args aren't valid, return an empty path.
 		if((v0 = resolveVertex(v0)) == nil) return([]);
 		if((v1 = resolveVertex(v1)) == nil) return([]);
 
+		// If either of the vertices lack a .data property, they're
+		// not zone routable, fail.
 		if(((d0 = v0.data) == nil) || ((d1 = v1.data) == nil))
 			return([]);
 
-		if((z0 = getVertex(d0.fastPathZone)) == nil) return([]);
+		// If the start and end points are both in the same zone,
+		// get the zone and it handles the entire pathfinding
+		// process.
+		if(d0.fastPathZone == d1.fastPathZone) {
+			// Make sure we have a valid zone.
+			if((z0 = getZone(d0.fastPathZone)) == nil)
+				return([]);
 
-		if(d0.fastPathZone == d1.fastPathZone)
+			// Call the zone's pathfinder.
 			return(z0.findPath(v0, v1));
+		}
 
+		if((z0 = getVertex(d0.fastPathZone)) == nil) return([]);
 		if((z1 = getVertex(d1.fastPathZone)) == nil) return([]);
 
 		zp = findSingleZonePath(z0.vertexID, z1.vertexID);
@@ -265,5 +279,23 @@ class FastPathMap: FastPathGraph
 	testPath(v0, v1, lst) {
 		if(!lst || !lst.length) return(nil);
 		return(resolveVertex(v1) == resolveVertex(lst[lst.length]));
+	}
+
+	resetFastPath() {
+		getZones().forEach({ x: x.resetFastPathGateways() });
+		getZones().forEach({ x: flushFastPathGatewayQueue(x) });
+		getZones().forEach({ x: resetFastPathZone(x) });
+
+		clearFastPathCache();
+		createFastPathCache();
+	}
+
+	resetFastPathZone(z) {
+		if((z = canonicalizeZone(z)) == nil) return(nil);
+
+		z.clearFastPathCache();
+		z.createFastPathCache();
+
+		return(true);
 	}
 ;

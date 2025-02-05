@@ -123,15 +123,15 @@ gameMain: GameMainDef
 	_connectRoomNorthSouth(rm0, rm1) {
 		_createDoorPair(rm0, &north, rm1, &south);
 
-		pathfinder.addEdge(rm0.getFastPathID(), rm1.getFastPathID());
-		pathfinder.addEdge(rm1.getFastPathID(), rm0.getFastPathID());
+		pathfinder.addEdge(rm0.fastPathID, rm1.fastPathID);
+		pathfinder.addEdge(rm1.fastPathID, rm0.fastPathID);
 	}
 
 	_connectRoomEastWest(rm0, rm1) {
 		_createDoorPair(rm0, &east, rm1, &west);
 
-		pathfinder.addEdge(rm0.getFastPathID(), rm1.getFastPathID());
-		pathfinder.addEdge(rm1.getFastPathID(), rm0.getFastPathID());
+		pathfinder.addEdge(rm0.fastPathID, rm1.fastPathID);
+		pathfinder.addEdge(rm1.fastPathID, rm0.fastPathID);
 	}
 
 	_connectMapsNorthSouth(map0, map1) {
@@ -172,9 +172,9 @@ gameMain: GameMainDef
 	timeCache() {
 		local ts;
 
-		pathfinder.clearFastPathCache();
 		ts = getTimestamp();
-		pathfinder.createFastPathCache();
+		pathfinder.resetFastPath();
+		//pathfinder.createFastPathCache();
 		aioSay('\ncache creation took <<toString(getInterval(ts))>>
 			seconds. \n');
 	}
@@ -194,12 +194,12 @@ gameMain: GameMainDef
 				d0 = doorList[i - 1];
 				d1 = doorList[i];
 			}
-			d0.makeLocked(true);
-			d1.makeLocked(nil);
+			//d0.makeLocked(true);
+			//d1.makeLocked(nil);
 
-			pathfinder.updatePathfinder(d0);
+			//pathfinder.updatePathfinder(d0);
 		}
-		//pathfinder.resetFastPathCache();
+		pathfinder.resetFastPath();
 	}
 
 	newGame() {

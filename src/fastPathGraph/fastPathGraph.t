@@ -60,7 +60,7 @@ class FastPathGraph: DirectedGraph
 		getVertices().forEach({ x: x.clearFastPathCache() });
 	}
 
-	resetFastPathCache() {
+	resetFastPath() {
 		clearFastPathCache();
 		createFastPathCache();
 	}

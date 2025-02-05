@@ -19,9 +19,6 @@
 #include <adv3.h>
 #include <en_us.h>
 
-#include <date.h>
-#include <bignum.h>
-
 #include "fastPath.h"
 
 #include "simpleRandomMap.h"
@@ -33,9 +30,6 @@ versionInfo: GameID;
 gameMain: GameMainDef
 	initialPlayerChar = me
 
-	getTimestamp() { return(new Date()); }
-	getInterval(d) { return(((new Date() - d) * 86400).roundToDecimal(3)); }
-
 	pickRandomRoom() {
 		return(map._getRoom(rand(map._mapSize) + 1));
 	}
@@ -44,9 +38,15 @@ gameMain: GameMainDef
 		local l, rm0, rm1;
 
 		pathfinder.createFastPathCache();
+
+		// Pick two random rooms.
 		rm0 = pickRandomRoom();
 		rm1 = pickRandomRoom();
+
+		// Try to find a path between them.
 		l = pathfinder.findPath(rm0, rm1);
+
+		// See if it worked.
 		if(pathfinder.testPath(rm0, rm1, l))
 			"Passed test\n ";
 		else
