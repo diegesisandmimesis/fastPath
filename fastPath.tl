@@ -11,6 +11,7 @@ source: src/fastPathZone/fastPathMap.t
 source: src/fastPathZone/fastPathZone.t
 source: src/fastPathZone/fastPathZoneVertex.t
 source: src/fastPathRoom/fastPathRoom.t
+source: src/fastPathRoom/fastPathRoomGateway.t
 source: src/fastPathRoom/fastPathRoomZone.t
 source: src/fastPathRoom/fastPathRoomPathfinder.t
 source: src/fastPathRoom/fastPathRoomUpdate.t

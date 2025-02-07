@@ -23,6 +23,11 @@ class FastPathGateway: FastPathEdge
 		data.append(new FastPathNextHopPair(rm0, rm1));
 	}
 
+	getNextHop(rm0, rm1) {
+		if(data == nil) return(nil);
+		return(data.valWhich({ x: x.match(rm0, rm1) }));
+	}
+
 	removeNextHop(rm0, rm1) {
 		local i;
 
@@ -37,7 +42,7 @@ class FastPathGateway: FastPathEdge
 		return(nil);
 	}
 
-	getNextHops() { return(data); }
+	getNextHops() { return(data ? data : []); }
 ;
 
 class FastPathNextHopPair: object

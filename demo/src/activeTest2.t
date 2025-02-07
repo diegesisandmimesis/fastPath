@@ -174,7 +174,6 @@ gameMain: GameMainDef
 
 		ts = getTimestamp();
 		pathfinder.resetFastPath();
-		//pathfinder.createFastPathCache();
 		aioSay('\ncache creation took <<toString(getInterval(ts))>>
 			seconds. \n');
 	}
@@ -194,12 +193,12 @@ gameMain: GameMainDef
 				d0 = doorList[i - 1];
 				d1 = doorList[i];
 			}
-			//d0.makeLocked(true);
-			//d1.makeLocked(nil);
+			d0.makeLocked(true);
+			d1.makeLocked(nil);
 
-			//pathfinder.updatePathfinder(d0);
+			pathfinder.updatePathfinder(d0);
 		}
-		pathfinder.resetFastPath();
+		//pathfinder.resetFastPath();
 	}
 
 	newGame() {
@@ -263,7 +262,12 @@ gameMain: GameMainDef
 	}
 ;
 
-me: Person;
+me: Person
+	executeTurn() {
+		inherited();
+		demoAfter.ts = gameMain.getTimestamp();
+	}
+;
 
 class DemoActor: Person
 	desc = "She looks like the <<spellIntOrdinal(actorNumber)>> person
@@ -398,13 +402,13 @@ DefineIAction(ActorMap)
 	execAction() {
 		local i, j, l, tmp, y, zones;
 
-		gameMain.timeCache();
+		//gameMain.timeCache();
 
 		zones = [ [ nwMap, neMap ], [ swMap, seMap ] ];
 
 		tmp = new StringBuffer();
 
-		for(i = zones.length; i >= 1; i--) {
+		for(i = 1; i <= zones.length; i++) {
 			l = zones[i];
 			for(y = l[1].mapWidth - 1; y >= 0; y--) {
 				for(j = 1; j <= l.length; j++) {
@@ -428,7 +432,7 @@ DefineIAction(ActorMap)
 	}
 
 	getMapTile(x, y, zone) {
-		local idx, n, rm;
+		local d, idx, n, rm;
 
 		idx = (y * zone.mapWidth) + x;
 		if((rm = zone._getRoom(idx)) == nil) {
@@ -436,6 +440,10 @@ DefineIAction(ActorMap)
 				zone <<toString(zone)>>\n ');
 			return('x');
 		}
+
+		if(rm == gameMain.initialPlayerChar.location)
+			return('@');
+
 		n = 0;
 		rm.contents.forEach(function(o) {
 			if(!o.ofKind(DemoActor)) return;
@@ -445,9 +453,12 @@ DefineIAction(ActorMap)
 		if(n == 0)
 			return('.');
 
-		n /= ((zone._mapSize) * gameMain.zones.length / 10);
+		d = gameMain.actors.length() / 10;
+		n /= d;
+
 		if(n > 9)
 			n = 9;
+
 
 		return(toString(n));
 	}
@@ -462,8 +473,8 @@ class NWRoom: DemoRoom fastPathZone = 'nw';
 class SERoom: DemoRoom fastPathZone = 'se';
 class SWRoom: DemoRoom fastPathZone = 'sw';
 
-class DemoMapGenerator: SimpleRandomMapGenerator
-	mapWidth = 3
+class DemoMapGenerator: SimpleRandomMapGeneratorRB
+	mapWidth = 10
 ;
 
 swMap: DemoMapGenerator name = 'SouthWest' roomClass = SWRoom;
@@ -474,3 +485,28 @@ nwMap: DemoMapGenerator name = 'NorthWest' roomClass = NWRoom
 
 
 class DemoDoor: IndirectLockable, AutoClosingDoor 'door' 'door';
+
+
+/*
+demoBefore: Schedulable
+	scheduleOrder = -999
+	nextRunTime = (libGlobal.totalTurns)
+	executeTurn() {
+		demoAfter.ts = gameMain.getTimestamp();
+		incNextRunTime(1);
+		return(nil);
+	}
+;
+*/
+
+demoAfter: Schedulable
+	scheduleOrder = 999
+	ts = nil
+	nextRunTime = (libGlobal.totalTurns)
+	executeTurn() {
+		"\n<.P>Turn took <<toString(gameMain.getInterval(ts))>>
+			seconds. \n ";
+		incNextRunTime(1);
+		return(nil);
+	}
+;

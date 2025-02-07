@@ -20,3 +20,12 @@ modify Lockable
 		fastPathRoomUpdater.updatePathfinders(self);
 	}
 ;
+
+class FastPathUpdate: object
+	zoneID = nil
+	room = nil
+	construct(v0?, v1?) {
+		zoneID = v0;
+		room = v1;
+	}
+;

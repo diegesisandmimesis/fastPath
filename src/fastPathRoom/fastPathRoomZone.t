@@ -41,6 +41,32 @@ class FastPathRoomZone: FastPathZone
 		return(true);
 	}
 
+	// Given a room, returns a list of the rooms adjacent to it that
+	// are in other zones.
+	// Return value is a list of Room instances.
+	checkFastPathGateways(rm0) {
+		local r;
+
+		// Make sure the arg is valid.
+		if(!isRoom(rm0)) return([]);
+
+		// For the return value.
+		r = new Vector();
+
+		// Traverse the rooms destination list.
+		rm0.fastPathDestinationList(fastPathActor)
+			.forEach(function(rm1) {
+			// If the destination is in the same zone as the
+			// argument we don't care about it.
+			if(rm1.fastPathZone == fastPathZoneID) return;
+
+			// Add the room to the return list.
+			r.append(rm1);
+		});
+
+		return(r.toList());
+	}
+
 	resetFastPathGateways() {
 		getVertices().forEach({ x: resetFastPathGateway(x) });
 	}
