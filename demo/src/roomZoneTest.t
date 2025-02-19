@@ -35,7 +35,6 @@ gameMain: GameMainDef
 		local l;
 
 		"\n<.p>\n ";
-pathfinder.log();
 		pathfinder.createFastPathCache();
 		//local l = pathfinder.findPath('start', 'exit');
 		l = pathfinder.findPath(startRoom, exitRoom);

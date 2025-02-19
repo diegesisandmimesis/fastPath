@@ -4,16 +4,41 @@
 // Version 1.0
 // Copyright 2022 Diegesis & Mimesis
 //
-// This is a very simple demonstration "game" for the fastPath library.
+// This demo is intended to be a performance test for the fastPath library.
+// It features four hundred rooms and four hundred actors.
 //
-// It features a hundred rooms and a hundred actors.  Each actor picks a
-// random other actor they want to reach.  Each turn every actor
-// evaluates an agenda that (probably) causes them to move toward their
-// chosen other actor.
+// The map consists of four zones, each of which is a 10x10 random maze.
+// The rooms in each zone are numbered from 1 to 100, with 1 in the southwest
+// corner, 10 in the southeast corner, 91 in the northwest corner, and
+// 100 in the northeast corner.
+//
+// The zones are laid out in a 2x2 grid, and their names indicate their
+// position:  nw, ne, sw, and se.
+//
+// Each zone is connected to each adjacent zone by two doors in the corners
+// of the zone boundary.  For example the nw zone is connected to the ne
+// zone with an east-west door in nw room 100 that connects to ne room 91, and
+// an east-west door in the nw room 10 that connects to the ne room 1.
+//
+// The game logic works such that only one of each pair of doors connecting
+// two zones is open at any time.  The demo includes a daemon that periodically
+// toggles the doors, closing one of each pair and opening the other (meaning
+// that the zones remain reachable but the paths change).
+//
+// Each actor picks a random other actor they want to reach.  Each turn
+// every actor evaluates an agenda that (probably) causes them to move
+// toward their chosen other actor.
 //
 // The room description in every room reports the room that currently
 // has the most actors in it, and the move the player should take to
 // reach it.
+//
+// There's also an >ACTOR MAP command that displays an ASCII art map of
+// where the actors are, a '.' indicating a room with no actors, a
+// number between 0 and 9 indicating the size of the room's population (the
+// number being the number of actors in the room divided by 40, capped at
+// 9--so 0 is 1 to 39 actors, 1 is 40 to 79, and so on).  The player's
+// position is marked by a '@'.
 //
 // It can be compiled via the included makefile with
 //
@@ -74,14 +99,37 @@ modify Room
 
 versionInfo: GameID;
 gameMain: GameMainDef
+	// Boolean.  Setting this to nil will cause the demo to
+	// use the stock adv3 pathfinder.  For performance testing.
+	useFastPath = true
+
+	// Standard adv3.  The default player character.
 	initialPlayerChar = me
 
+	// Array for all the actors.
+	// Added in order, but we don't really care about the order.
 	actors = perInstance(new Vector())
 
+	// Array for all the doors.
+	// Added in pairs of pairs.  Each "logical" door in a T3
+	// game is represented by two objects:  a "main" door object and
+	// an "other side of the door" object, one for each of the
+	// two rooms the door connects.
+	// The door list starts with index 1 being the first "main" door
+	// and index 2 being its "other side", with this pattern
+	// continuing for the rest of the array.
+	// Also, as part of the design of the demo whenever two zones
+	// are connected to each other they are connected by two doors.
+	// If the zones are arranged north-south then the doors are
+	// in the northwest and northeast corner of the southern zone
+	// and the southwest and southeast corner of the northern zone.
+	// The way the game logic works, only one of these doors will
+	// be open at a time.
+	doorList = perInstance(new Vector())
+
+	// Arrays of our zones.  Used by various methods as lookups.
 	zoneNames = static [ 'ne', 'nw', 'se', 'sw' ]
 	zones = static [ neMap, nwMap, seMap, swMap ]
-
-	doorList = perInstance(new Vector())
 
 	doorDaemon = nil
 
@@ -115,6 +163,7 @@ gameMain: GameMainDef
 		d0.makeLocked(nil);
 
 		doorList.append(d0);
+		doorList.append(d1);
 
 		rm0.(prop0) = d0;
 		rm1.(prop1) = d1;
@@ -165,9 +214,17 @@ gameMain: GameMainDef
 
 	// Wrapper around pathfinding method.
 	// We do this so it's easier to swap methods for a/b testing.
-	findPath(a, rm0, rm1) { return(pathfinder.findPath(rm0, rm1)); }
-	//findPath(a, rm0, rm1)
-		//{ return(roomPathFinder.findPath(a, rm0, rm1)); }
+	findPath(a, rm0, rm1) {
+		if(useFastPath == true)
+			return(pathfinder.findPath(rm0, rm1));
+		else
+			return(roomPathFinder.findPath(a, rm0, rm1));
+	}
+
+	updatePathfinder(v) {
+		if(useFastPath == true)
+			pathfinder.updatePathfinder(v);
+	}
 
 	timeCache() {
 		local ts;
@@ -184,21 +241,34 @@ gameMain: GameMainDef
 	toggleDoors() {
 		local d0, d1, i;
 
-		for(i = 2; i <= doorList.length; i += 2) {
+		for(i = 1; i <= doorList.length; i += 4) {
 			if((rand(100) + 1) < 90) continue;
 			if((rand(100) + 1) < 50) {
-				d0 = doorList[i];
-				d1 = doorList[i - 1];
+				d0 = i;
+				d1 = i + 2;
+				//d0 = doorList[i];
+				//d1 = doorList[i - 1];
 			} else {
-				d0 = doorList[i - 1];
-				d1 = doorList[i];
+				d0 = i + 2;
+				d1 = i;
+				//d0 = doorList[i - 1];
+				//d1 = doorList[i];
 			}
-			d0.makeLocked(true);
-			d1.makeLocked(nil);
-
-			pathfinder.updatePathfinder(d0);
+			_toggleDoor(d0, true);
+			_toggleDoor(d1, nil);
 		}
-		//pathfinder.resetFastPath();
+	}
+
+	_toggleDoor(idx, st) {
+		local d0, d1;
+
+		d0 = doorList[idx];
+		d1 = doorList[idx + 1];
+
+		d0.makeLocked(st);
+
+		gameMain.updatePathfinder(d0);
+		gameMain.updatePathfinder(d1);
 	}
 
 	newGame() {
@@ -473,7 +543,7 @@ class NWRoom: DemoRoom fastPathZone = 'nw';
 class SERoom: DemoRoom fastPathZone = 'se';
 class SWRoom: DemoRoom fastPathZone = 'sw';
 
-class DemoMapGenerator: SimpleRandomMapGeneratorRB
+class DemoMapGenerator: SimpleRandomMapGeneratorBraid
 	mapWidth = 10
 ;
 

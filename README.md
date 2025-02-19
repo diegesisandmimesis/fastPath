@@ -24,6 +24,10 @@ A TADS3/adv3 module implementing pathfinding via precomputed tables.
 * [Room Pathfinder](#room-section)
   * [RoomPathfinder](#room-pathfinder)
 
+[Examples](#examples)
+* [Generic Pathfinding](#generic)
+* [Room Pathfinding](#room)
+
 <a name="getting-started"/></a>
 ## Getting Started
 
@@ -120,27 +124,45 @@ will be the same except for the extensions (``.t3m`` for makefiles and
 
 ##### Methods
 
+<a name="methods-note"/></a>
+**NOTE**
+
+There are numerous methods that provide low-level ways to manipulate the
+cache used for pathfinding.  **In general they should not be used** and
+cache manipulation should be handled by ``resetFastPath()`` (or
+subclass-specific methods, like ``RoomPathfinder.updatePathfinder()``.
+
 * ``clearFastPathCache()``
 
   Clear the next hop cache on all vertices in the graph.
+  See [note](#methods-note) above.
 
 * ``createFastPathCache()``
 
   Generate the next hop tables for every vertex in the graph.
+  See [note](#methods-note) above.
 
 * ``clearFastPathCache()``
 
   Clear the next hop cache on all vertices in the graph.
+  See [note](#methods-note) above.
 
-* ``resetFastPathCache()``
+* ``resetFastPath()``
 
   Clear and then re-create next hop cache for the graph.
+  **Note**:  This is the only cache manipulation method on the base
+  ``FastPathGraph`` class that should be used by most external callers that
+  are not implementing part of the cache logic.
 
 * ``getFastPath(vertex0, vertex1)``
 
   Returns the next hop in the path from the first argument to the second.
 
   Arguments can be vertex IDs or ``Vertex`` instances.
+
+  **Note**:  This is **not** the general-use pathfinding method, this is
+  **only** for getting the next hop (the single next step) within a single
+  zone.  Most callers should probably use ``findPath()`` instead.
 
 * ``findPathInSingleZone(vertex0, vertex1)``
 
@@ -151,6 +173,9 @@ will be the same except for the extensions (``.t3m`` for makefiles and
   in a single set of next hop tables.
 
   Arguments can be vertex IDs or ``Vertex`` instances.
+
+  **Note**:  This is **not** the general-use pathfinding method, most callers
+  should probably use ``findPath()`` instead.
 
 * ``findPath(vertex0, vertex1)``
 
@@ -274,3 +299,84 @@ A data structure containing the outcome of a gateway choice.  Returned by
 
 <a name="room-pathfinder"/></a>
 #### RoomPathfinder
+
+<a name="examples"/></a>
+## Examples
+
+<a name="generic"/></a>
+### Generic Pathfinding
+
+To use the fastPath module's pathfinding on a generic graph, use the
+``FastPathGraph`` class.  Declaring graphs works the same way as in the
+base ``Graph`` class.  For more information on it, see the documentation for
+the [dataTypes](https://github.com/diegesisandmimesis/dataTypes) module.
+
+Example:
+```
+// Declare a graph.  None of this is specific to the pathfinder code, see
+// the documentation for the base Graph class for more details.
+graph0: FastPathGraph
+        [       'in',   'foo',  'bar',  'baz',  'out'   ]
+        [
+                0,      1,      0,      0,      0,
+                1,      0,      1,      1,      0,
+                0,      1,      0,      1,      0,
+                0,      1,      1,      0,      1,
+                0,      0,      0,      0,      1
+        ]
+;
+
+// Return value will be a List.  On success the contents will be each
+// Vertex instance in the path, starting with the "in" Vertex instance
+// and ending with the "out" Vertex instance.  On failure the list
+// will be empty.
+local p = graph0.findPath('in', 'out');
+```
+
+<a name="room"/></a>
+### Room Pathfinding
+
+To do pathfinding through the gameworld, use the ``RoomPathfinder`` class.
+
+#### Basic Room Pathfinding
+
+Simplest case all you need is to declare a ``RoomPathfinder`` instance and
+then call its ``findPath()`` method.  The arguments are the two Room
+instances to find a path between.
+
+The return value will always be a ``List``.  On success it will contain
+the ``Room`` instances in the path, including the endpoints.  On failure
+an empty list will be returned.
+```
+// Declare a pathfinder.
+pathfinder: RoomPathfinder;
+
+// Get the path.
+local p = pathfinder.findPath(room1, room2);
+```
+
+#### Per-Actor Pathfinding
+
+By default ``RoomPathfinder`` will use ``gameMain.initialPlayerChar`` to
+test travel connectors.  The actor can be changed by setting the
+``fastPathActor`` property on the ``RoomPathfinder`` instance.
+
+If pathfinding needs to work differently for different characters, multiple
+``RoomPathfinder`` instances can be declared.  Note that the overhead
+grows linearly with each additional instance.
+
+```
+// Declare a pathfinder for an NPC named Alice.
+alicePathfinder: RoomPathfinder
+	fastPathActor = alice
+;
+
+// Declare a pathfinder for an NPC named Bob.
+bobPathfinder: RoomPathfinder
+	fastPathActor = bob
+;
+```
+
+#### Declaring Multiple Zones
+
+#### Updating the Pathfinder
