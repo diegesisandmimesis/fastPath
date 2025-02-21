@@ -226,34 +226,68 @@ class FastPathMap: FastPathGraph
 			return(z0.findPath(v0, v1));
 		}
 
+		// Make sure we have zones for the zone IDs on the
+		// source and destination vertices.
 		if((z0 = getVertex(d0.fastPathZone)) == nil) return([]);
 		if((z1 = getVertex(d1.fastPathZone)) == nil) return([]);
 
+		// We now get the zone path--the list of zones we need
+		// to traverse in order to reach the destination.
 		zp = findSingleZonePath(z0.vertexID, z1.vertexID);
 
-aioSay('\nZONE PATH:\n ');
-zp.forEach(function(o) {
-	aioSay('\n\t<<toString(o.vertexID)>>\n ');
-});
+		// If the zone path doesn't have at least two zones, we're
+		// borked;  we already check above to see if the endpoints
+		// are in the same zone and if we're here they're not.  So
+		// if the zone path is less than two zones long we don't
+		// know how to pathfind between the two endpoints.
 		if(zp.length < 2) return([]);
 
+		// Results vector.  This will hold the full path.
 		r = new Vector();
+
+		// Current vertex.
 		v = v0;
 
+		// We pairwise traverse the zone path, starting with
+		// the first two, then the second and third, then
+		// third and fourth, and so on.
 		for(i = 2; i <= zp.length; i++) {
-			if((g = getGateway(zp[i - 1], zp[i])) == nil) {
+			// Get the gateway between the two zones we're
+			// currently considering.
+			// If we don't know about a gateway between them
+			// then we fail, returning the path so far.
+			if((g = getGateway(zp[i - 1], zp[i])) == nil)
 				return(r);
-			}
+
+			// Figure out which connection between the two
+			// zones we want to path through.  The return
+			// value will be a data structure containing the
+			// path through the first zone from the current
+			// vertex to the connection to the second zone.
 			p = pickNextHop(zp[i - 1].data, g, v);
 
+			// Add the path through the first zone to the
+			// results list.
 			r.appendAll(p.pathThroughZone);
+
+			// Make the current vertex the next hop.  That
+			// will be the room in the second zone that connects
+			// to the first zone.
 			v = p.nextHop;
 		}
 
+		// Above we traverse all the gateways in the zone path,
+		// but this can leave us without the path through the
+		// last zone.
+		// We check to see if z, which is the vertex we've
+		// pathed up to, is the destination vertex.  If so,
+		// we can just add it to the results list and we're done.
+		// If it isn't, we get the last zone in the zone path list,
+		// and then use it to get the path across the last zone,
+		// which should complete the path.
 		if(v != v1) {
-			g = getZone(zp[zp.length]);
-aioSay('\nfoo\n ');
-			r.appendAll(g.findSingleZonePath(v, v1));
+			if((g = getZone(zp[zp.length].vertexID)) != nil)
+				r.appendAll(g.findSingleZonePath(v, v1));
 		} else {
 			r.append(v);
 		}

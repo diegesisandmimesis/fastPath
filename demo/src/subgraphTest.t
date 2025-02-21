@@ -45,17 +45,13 @@ gameMain: GameMainDef
 		}
 
 		pathfinder.verifyFastPathZone('zoneX');
-		//pathfinder.resetFastPath();
-pathfinder.log();
-
-aioSay('\n===ZONES===\n ');
-		pathfinder.getZones().forEach(function(o) {
-			o.log();
-		});
-aioSay('\n===ZONES===\n ');
 
 		l = pathfinder.findPath('foo1', 'bar3');
-		aioSay('\n==path = <<toString(l)>>==\n ');
+		if(pathfinder.testPath('foo1', 'bar3', l)) {
+			"\npassed all tests\n ";
+		} else {
+			"\npathfinding FAILED\n ";
+		}
 	}
 ;
 

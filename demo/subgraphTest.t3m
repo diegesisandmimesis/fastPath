@@ -9,3 +9,4 @@
 -lib asyncEvent/asyncEvent
 -lib ../fastPath
 -source src/subgraphTest.t
+-source reflect.t
