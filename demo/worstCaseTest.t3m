@@ -1,0 +1,15 @@
+-D LANGUAGE=en_us
+-D MESSAGESTYLE=neu
+-D SIMPLE_RANDOM_MAP
+-D WORST_CASE
+-Fy obj -Fo obj
+-Fs ../..
+-o games/worstCaseTest.t3
+-lib system
+-lib adv3/adv3
+-lib dataTypes/dataTypes
+-lib simpleRandomMap/simpleRandomMap
+-lib worstCase/worstCase
+-lib ../fastPath
+-source src/worstCaseTest.t
+-source extensions/pathfind.t

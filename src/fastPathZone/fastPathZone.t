@@ -72,4 +72,10 @@ class FastPathZone: FastPathGraph
 	getFastPathGatewayQueue() { return(_fastPathGatewayQueue); }
 	queueFastPathGateway(v) { _fastPathGatewayQueue.append(v); }
 	flushFastPathGatewayQueue() { _fastPathGatewayQueue.setLength(0); }
+
+	resetFastPathGateways() {
+		getVertices().forEach({ x: resetFastPathGateway(x) });
+	}
+	//resetFastPathGateway(v) { return(nil); }
+	resetFastPathGateway(v) { addFastPathGateways(v); }
 ;

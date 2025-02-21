@@ -1,0 +1,14 @@
+-D LANGUAGE=en_us
+-D MESSAGESTYLE=neu
+-D SIMPLE_RANDOM_MAP
+-Fy obj -Fo obj
+-Fs ../..
+-o games/hugeTest.t3
+-lib system
+-lib adv3/adv3
+-lib dataTypes/dataTypes
+-lib simpleRandomMap/simpleRandomMap
+-lib ../fastPath
+-source src/hugeTest.t
+-source src/activeTestNames.t
+-source extensions/pathfind.t

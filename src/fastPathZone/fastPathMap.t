@@ -21,7 +21,7 @@ class FastPathMap: FastPathGraph
 
 	_fastPathIDCounter = 0
 
-	fastPathZoneTable = perInstance(new LookupTable())
+	//fastPathZoneTable = perInstance(new LookupTable())
 
 	initializeFastPathMap() {
 		if(fastPathObjectClass == nil)
@@ -231,14 +231,19 @@ class FastPathMap: FastPathGraph
 
 		zp = findSingleZonePath(z0.vertexID, z1.vertexID);
 
+aioSay('\nZONE PATH:\n ');
+zp.forEach(function(o) {
+	aioSay('\n\t<<toString(o.vertexID)>>\n ');
+});
 		if(zp.length < 2) return([]);
 
 		r = new Vector();
 		v = v0;
 
 		for(i = 2; i <= zp.length; i++) {
-			if((g = getGateway(zp[i - 1], zp[i])) == nil)
+			if((g = getGateway(zp[i - 1], zp[i])) == nil) {
 				return(r);
+			}
 			p = pickNextHop(zp[i - 1].data, g, v);
 
 			r.appendAll(p.pathThroughZone);
@@ -246,7 +251,9 @@ class FastPathMap: FastPathGraph
 		}
 
 		if(v != v1) {
-			r.appendAll(findSingleZonePath(v, v1));
+			g = getZone(zp[zp.length]);
+aioSay('\nfoo\n ');
+			r.appendAll(g.findSingleZonePath(v, v1));
 		} else {
 			r.append(v);
 		}
@@ -297,5 +304,96 @@ class FastPathMap: FastPathGraph
 		z.createFastPathCache();
 
 		return(true);
+	}
+
+	verifyFastPathZone(zoneID?) {
+		// Figure out which zone we're looking at.
+		zoneID = (zoneID ? zoneID : fastPathDefaultZone);
+
+		if(!fixFastPathSubgraphs(zoneID))
+			return(nil);
+
+		getZones().forEach({ x: x.resetFastPathGateways() });
+		getZones().forEach({ x: flushFastPathGatewayQueue(x) });
+		getZones().forEach({ x: resetFastPathZone(x) });
+		clearFastPathCache();
+
+		removeVertices();
+
+		initializeFastPathMap();
+
+		getZones().forEach({ x: x.createFastPathCache() });
+		createFastPathCache();
+
+		return(true);
+	}
+
+	// Check a zone for isolated subgraphs, re-rolling them into
+	// their own zones if there are any.
+	// Arg is the zone ID, defaulting to the "default" zone if none
+	// is given.
+	fixFastPathSubgraphs(zoneID?) {
+		local i, id, l, z;
+
+		// Figure out which zone we're looking at.
+		zoneID = (zoneID ? zoneID : fastPathDefaultZone);
+
+		// If the zone doesn't exist, nothing to do.
+		if((z = getZone(zoneID)) == nil)
+			return(nil);
+
+		// generateSubgraphs() should never return nil so this
+		// should never happen.
+		if((l = z.generateSubgraphs()) == nil)
+			return(nil);
+
+		// If there are zero or one subgraphs then we don't have
+		// anything to fix.
+		if(l.length < 2)
+			return(nil);
+
+		// Iterate over all the subgraphs.
+		for(i = 1; i <= l.length; i++) {
+			id = _getFastPathSubgraphID(zoneID, i);
+
+			l[i].forEach(function(v) {
+				if((v = z.canonicalizeVertex(v)) == nil)
+					return;
+				if(v.data == nil)
+					return;
+				v.data.fastPathZone = id;
+			});
+		}
+
+		return(true);
+	}
+
+	// Method used to generate zone IDs for new zones created to
+	// eliminated isolated subgraphs.
+	_getFastPathSubgraphID(baseID, idx) {
+		local id, n, z;
+
+		// First guess:  just the base name plus an index.
+		id = baseID + toString(idx);
+
+		// Counter for retries.
+		n = 0;
+
+		// Iterate as long as the ID is for an existing zone.
+		z = getZone(id);
+		while(z != nil) {
+			// Increment the counter.
+			n += 1;
+
+			// Add the counter as a suffix to the ID.
+			id = baseID + toString(idx) + '-' + toString(n);
+
+			// Try again.
+			z = getZone(id);
+		}
+
+		// Return the first ID we tried that doesn't correspond
+		// to an existing zone.
+		return(id);
 	}
 ;
