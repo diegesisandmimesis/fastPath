@@ -1,0 +1,12 @@
+-D LANGUAGE=en_us
+-D MESSAGESTYLE=neu
+-Fy obj -Fo obj
+-Fs ../..
+-o games/roomSubgraphTest.t3
+-lib system
+-lib adv3/adv3
+-lib dataTypes/dataTypes
+-lib asyncEvent/asyncEvent
+-lib ../fastPath
+-source src/roomSubgraphTest.t
+-source reflect.t

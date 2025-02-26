@@ -242,17 +242,13 @@ gameMain: GameMainDef
 		local d0, d1, i;
 
 		for(i = 1; i <= doorList.length; i += 4) {
-			if((rand(100) + 1) < 90) continue;
+			if((rand(100) + 1) < 75) continue;
 			if((rand(100) + 1) < 50) {
 				d0 = i;
 				d1 = i + 2;
-				//d0 = doorList[i];
-				//d1 = doorList[i - 1];
 			} else {
 				d0 = i + 2;
 				d1 = i;
-				//d0 = doorList[i - 1];
-				//d1 = doorList[i];
 			}
 			_toggleDoor(d0, true);
 			_toggleDoor(d1, nil);
@@ -266,6 +262,7 @@ gameMain: GameMainDef
 		d1 = doorList[idx + 1];
 
 		d0.makeLocked(st);
+		d0.makeOpen(st);
 
 		gameMain.updatePathfinder(d0);
 		gameMain.updatePathfinder(d1);
@@ -297,6 +294,7 @@ gameMain: GameMainDef
 			g = new DemoAgenda();	// create the travel agenda
 			a.addToAgenda(g);
 			g.location = a;		// IMPORTANT: for getActor()
+			a._demoAgenda = g;
 
 			actors.append(a);	// bookkeeping
 		}
@@ -346,6 +344,8 @@ class DemoActor: Person
 	isProperName = true
 
 	actorNumber = nil	// number from 1 to 100
+
+	_demoAgenda = nil	// Pointer to the pathfinding agenda
 
 	// Set our name based on our number.
 	setActorNumber(n, z) {
@@ -409,6 +409,16 @@ class DemoAgenda: AgendaItem
 		// target's current location.
 		l = gameMain.findPath(a, rm0, rm1);
 		if(l.length < 2) return;
+/*
+aioSay('\n==<<getActor().name>>==\n ');
+aioSay('\n\ttarget = <<targetActor.name>>==\n ');
+aioSay('\n\tfrom = <<rm0.name>>\n ');
+aioSay('\n\tto = <<rm1.name>>\n ');
+l.forEach(function(o) {
+	aioSay('\n\t\t<<o.fastPathID>>\n ');
+});
+aioSay('\n==<<getActor().name>>==\n ');
+*/
 
 		// If our current destination is the room we came from,
 		// give it a 50/50 chance to stay put.  This is to damp
@@ -538,6 +548,62 @@ VerbRule(ActorMap)
 	verbPhrase = 'map/mapping actors'
 ;
 
+
+DefineTAction(DebugActor);
+VerbRule(DebugActor)
+	'debug' 'actor' singleDobj: DebugActorAction
+	verbPhrase = 'debug/debugging (who)'
+;
+
+modify Thing
+	dobjFor(DebugActor) { verify() { illogical('Not an actor.'); } }
+;
+
+modify Actor
+	_demoAgenda = nil
+
+	dobjFor(DebugActor) {
+		verify() {
+			if(_demoAgenda == nil)
+				illogicalNow('No pathfinding agenda.');
+		}
+		action() {
+			local a, l, rm0, rm1, t;
+
+			a = _demoAgenda;
+
+			"\n===<<toString(name)>>===\n ";
+			if((t = a.targetActor) != nil)
+				"\n\ttarget = <<toString(t.name)>>\n ";
+			else
+				"\n\tNO TARGET\n ";
+
+			if((rm0 = location) != nil)
+				"\n\tfrom = <<rm0.name>>\n ";
+			else
+				"\n\tNO LOCATION\n ";
+
+			if((rm1 = a.getTargetRoom()) != nil)
+				"\n\tto = <<toString(rm1.name)>>\n ";
+			else
+				"\n\tNO TARGET ROOM\n ";
+
+			if((l = gameMain.findPath(l, rm0, rm1)) == nil) {
+				"\n\tPATHFINDING FAILED\n ";
+			} else {
+				"\n\tPath:\n ";
+				l.forEach(function(o) {
+					"\n\t\t<<o.name>>\n ";
+				});
+			}
+
+			"\n===<<toString(name)>>===\n ";
+		}
+	}
+;
+
+
+
 class NERoom: DemoRoom fastPathZone = 'ne';
 class NWRoom: DemoRoom fastPathZone = 'nw';
 class SERoom: DemoRoom fastPathZone = 'se';
@@ -545,6 +611,7 @@ class SWRoom: DemoRoom fastPathZone = 'sw';
 
 class DemoMapGenerator: SimpleRandomMapGeneratorBraid
 	mapWidth = 10
+	//mapWidth = 3
 ;
 
 swMap: DemoMapGenerator name = 'SouthWest' roomClass = SWRoom;
@@ -554,20 +621,9 @@ nwMap: DemoMapGenerator name = 'NorthWest' roomClass = NWRoom
 	movePlayer = nil;
 
 
-class DemoDoor: IndirectLockable, AutoClosingDoor 'door' 'door';
+//class DemoDoor: IndirectLockable, AutoClosingDoor 'door' 'door';
+class DemoDoor: IndirectLockable, Door 'door' 'door';
 
-
-/*
-demoBefore: Schedulable
-	scheduleOrder = -999
-	nextRunTime = (libGlobal.totalTurns)
-	executeTurn() {
-		demoAfter.ts = gameMain.getTimestamp();
-		incNextRunTime(1);
-		return(nil);
-	}
-;
-*/
 
 demoAfter: Schedulable
 	scheduleOrder = 999
