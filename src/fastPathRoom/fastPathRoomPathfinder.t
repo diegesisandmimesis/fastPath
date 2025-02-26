@@ -75,7 +75,12 @@ class RoomPathfinder: FastPathAutoInit, FastPathMap, Schedulable
 
 	// Hook for FastPathAutoInit class.  Here we 
 	initializeFastPath() {
+		// Normal initialization.
 		initializeFastPathMap();
+
+		// Check the zones created above for disconnected
+		// subgraphs.
+		verifyFastPathZones();
 	}
 
 	// Tweak to testPath() to work with rooms as args.

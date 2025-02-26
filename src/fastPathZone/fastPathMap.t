@@ -340,6 +340,14 @@ class FastPathMap: FastPathGraph
 		return(true);
 	}
 
+	// Go through all the current zones checking for disconnected
+	// subgraphs.
+	verifyFastPathZones() {
+		getZones().forEach({ x: verifyFastPathZone(x.fastPathZoneID) });
+	}
+
+	// Check the given zone for disconnected subgraphs, fixing them
+	// if necessary.
 	verifyFastPathZone(zoneID?) {
 		// Figure out which zone we're looking at.
 		zoneID = (zoneID ? zoneID : fastPathDefaultZone);
