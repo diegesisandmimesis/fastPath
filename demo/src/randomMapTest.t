@@ -6,6 +6,10 @@
 //
 // This is a very simple demonstration "game" for the fastPath library.
 //
+// This just generates a random map, picks two random rooms in it, and
+// then tries to compute the path between them.  This is intended as
+// a test of minimal functionality with a non-trivial map.
+//
 // It can be compiled via the included makefile with
 //
 //	# t3make -f randomMapTest.t3m
@@ -30,14 +34,11 @@ versionInfo: GameID;
 gameMain: GameMainDef
 	initialPlayerChar = me
 
-	pickRandomRoom() {
-		return(map._getRoom(rand(map._mapSize) + 1));
-	}
+	// Returns a random room from the procgen map.
+	pickRandomRoom() { return(map._getRoom(rand(map._mapSize) + 1)); }
 
 	newGame() {
 		local l, rm0, rm1;
-
-		pathfinder.createFastPathCache();
 
 		// Pick two random rooms.
 		rm0 = pickRandomRoom();
@@ -57,7 +58,4 @@ gameMain: GameMainDef
 me: Person;
 
 pathfinder: RoomPathfinder;
-
-map: SimpleRandomMapGenerator
-	movePlayer = nil
-;
+map: SimpleRandomMapGenerator movePlayer = nil;

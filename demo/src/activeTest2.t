@@ -161,6 +161,7 @@ gameMain: GameMainDef
 		d1.initializeThing();
 
 		d0.makeLocked(nil);
+		d0.makeOpen(true);
 
 		doorList.append(d0);
 		doorList.append(d1);
@@ -262,7 +263,7 @@ gameMain: GameMainDef
 		d1 = doorList[idx + 1];
 
 		d0.makeLocked(st);
-		d0.makeOpen(st);
+		d0.makeOpen(!st);
 
 		gameMain.updatePathfinder(d0);
 		gameMain.updatePathfinder(d1);
@@ -271,6 +272,8 @@ gameMain: GameMainDef
 	newGame() {
 		tweakMap();
 
+		placePlayer();
+
 		timeCache();
 
 		zones.forEach({ x: _addActors(x) });
@@ -278,6 +281,13 @@ gameMain: GameMainDef
 		doorDaemon = new Daemon(self, &toggleDoors, 1);
 
 		inherited();
+	}
+
+	placePlayer() {
+		local rm, z;
+
+		z = zones[3];
+		rm = z.
 	}
 
 	_addActors(z) {
@@ -409,16 +419,6 @@ class DemoAgenda: AgendaItem
 		// target's current location.
 		l = gameMain.findPath(a, rm0, rm1);
 		if(l.length < 2) return;
-/*
-aioSay('\n==<<getActor().name>>==\n ');
-aioSay('\n\ttarget = <<targetActor.name>>==\n ');
-aioSay('\n\tfrom = <<rm0.name>>\n ');
-aioSay('\n\tto = <<rm1.name>>\n ');
-l.forEach(function(o) {
-	aioSay('\n\t\t<<o.fastPathID>>\n ');
-});
-aioSay('\n==<<getActor().name>>==\n ');
-*/
 
 		// If our current destination is the room we came from,
 		// give it a 50/50 chance to stay put.  This is to damp
@@ -610,16 +610,14 @@ class SERoom: DemoRoom fastPathZone = 'se';
 class SWRoom: DemoRoom fastPathZone = 'sw';
 
 class DemoMapGenerator: SimpleRandomMapGeneratorBraid
-	mapWidth = 10
-	//mapWidth = 3
+	//mapWidth = 10
+	mapWidth = 3
 ;
 
-swMap: DemoMapGenerator name = 'SouthWest' roomClass = SWRoom;
+swMap: DemoMapGenerator name = 'SouthWest' roomClass = SWRoom movePlayer = nil;
 seMap: DemoMapGenerator name = 'SouthEast' roomClass = SERoom movePlayer = nil;
 neMap: DemoMapGenerator name = 'NorthEast' roomClass = NERoom movePlayer = nil;
-nwMap: DemoMapGenerator name = 'NorthWest' roomClass = NWRoom
-	movePlayer = nil;
-
+nwMap: DemoMapGenerator name = 'NorthWest' roomClass = NWRoom movePlayer = nil;
 
 //class DemoDoor: IndirectLockable, AutoClosingDoor 'door' 'door';
 class DemoDoor: IndirectLockable, Door 'door' 'door';

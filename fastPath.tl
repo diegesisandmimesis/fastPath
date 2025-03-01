@@ -1,6 +1,5 @@
 name: fastPath Library
 source: fastPath.t
-source: fastPathController.t
 source: fastPathAutoInit.t
 source: src/fastPathGraph/fastPathVertex.t
 source: src/fastPathGraph/fastPathEdge.t

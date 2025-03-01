@@ -34,12 +34,12 @@ gameMain: GameMainDef
 		local l;
 
 		l = pathfinder.findPath(foo1, bar3);
+
 		if(pathfinder.testPath(foo1, bar3, l)) {
 			"\npassed all tests\n ";
 		} else {
 			"\npathfinding FAILED\n ";
 		}
-		//inherited();
 	}
 ;
 

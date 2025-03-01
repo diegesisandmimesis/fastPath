@@ -6,6 +6,9 @@
 //
 // This is a very simple demonstration "game" for the fastPath library.
 //
+// This is a minimal test of zone-aware pathfinding using a tiny,
+// trivial map.
+//
 // It can be compiled via the included makefile with
 //
 //	# t3make -f zoneTest.t3m
@@ -28,24 +31,16 @@ versionInfo: GameID;
 gameMain: GameMainDef
 	initialPlayerChar = me
 
-	getTimestamp() { return(new Date()); }
-	getInterval(d) { return(((new Date() - d) * 86400).roundToDecimal(3)); }
-
 	newGame() {
 		local l;
 
-		"\n<.p>\n ";
-		pathfinder.createFastPathCache();
-		//local l = pathfinder.findPath('start', 'exit');
 		l = pathfinder.findPath(startRoom, exitRoom);
-		"\nPath:\n ";
-		if(l == nil) {
-			"\n\tno path\n ";
-			return;
+
+		if(pathfinder.testPath(startRoom, exitRoom, l)) {
+			"test passed\n ";
+		} else {
+			"pathfinding FAILED\n ";
 		}
-		l.forEach(function(o) {
-			"\n\t<<toString(o.name)>>\n ";
-		});
 	}
 ;
 

@@ -6,6 +6,10 @@
 //
 // This is a very simple demonstration "game" for the fastPath library.
 //
+// It creates a large random map and then computes a bunch of random
+// paths through it first using fastMap pathfinding and then using
+// native adv3 pathfinding.
+//
 // It can be compiled via the included makefile with
 //
 //	# t3make -f perfTest.t3m
@@ -28,44 +32,6 @@
 #ifndef SIMPLE_RANDOM_MAP_H
 #error "This demo requires the simpleRandomMap module. "
 #endif // SIMPLE_RANDOM_MAP_H
-
-/*
-modify Room
-	allDirectionsExitList(actor?, cb?) {
-		local c, dst, r;
-
-		r = new Vector(Direction.allDirections.length());
-
-		actor = (actor ? actor : gActor);
-		if(!actor) return(r);
-
-		Direction.allDirections.forEach(function(d) {
-			if((c = getTravelConnector(d, actor)) == nil)
-				return;
-			if(!c.isConnectorApparent(self, actor))
-				return;
-			if((dst = c.getDestination(self, actor)) == nil)
-				return;
-			if((cb != nil) && ((cb)(d, dst) != true))
-				return;
-			r.append(new DestInfo(d, dst, nil, nil));
-		});
-
-		return(r);
-	}
-
-	exitList(actor?, cb?) { return(allDirectionsExitList(actor, cb)); }
-
-	destinationList(actor?, cb?) {
-		local r;
-
-		r = new Vector();
-		exitList(actor, cb).forEach({ x: r.append(x.dest_) });
-
-		return(r);
-	}
-;
-*/
 
 versionInfo: GameID;
 gameMain: GameMainDef
@@ -109,10 +75,9 @@ gameMain: GameMainDef
 	timeCache() {
 		local ts;
 
-		pathfinder.clearFastPathCache();
-		t3RunGC();
+		
 		ts = getTimestamp();
-		pathfinder.createFastPathCache();
+		pathfinder.resetFastPath();
 		"Creating cache took <<toString(getInterval(ts))>> seconds.\n ";
 	}
 

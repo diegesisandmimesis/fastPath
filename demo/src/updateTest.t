@@ -24,44 +24,6 @@
 
 #include "fastPath.h"
 
-/*
-modify Room
-	foozle(actor) {
-		//local c, dst, i, lst, r;
-		local c, dst, r;
-
-		r = new Vector();
-
-		Direction.allDirections.forEach(function(d) {
-			if((c = getTravelConnector(d, actor)) == nil)
-				return;
-			if(!c.isConnectorApparent(self, actor))
-				return;
-			if((dst = c.getDestination(self, actor)) == nil)
-				return;
-			if(!tryIt(actor, c, dst))
-				return;
-			r.append(dst);
-		});
-
-		return(r);
-	}
-	tryIt(actor, conn, dst) {
-		local r;
-
-		try {
-			newActorAction(actor, TravelVia, conn);
-			if(actor.location == dst)
-				r = true;
-		}
-		catch(Exception e) {
-			return(nil);
-		}
-		return(r);
-	}
-;
-*/
-
 versionInfo: GameID;
 gameMain: GameMainDef
 	initialPlayerChar = me
@@ -69,59 +31,97 @@ gameMain: GameMainDef
 	getTimestamp() { return(new Date()); }
 	getInterval(d) { return(((new Date() - d) * 86400).roundToDecimal(3)); }
 
+	pathToggle = nil
+
 	newGame() {
-		local l;
-
-		pathfinder.createFastPathCache();
-		l = pathfinder.findPath(startRoom, exitRoom);
-		"Path with locked door:\n ";
-		l.forEach({ x: "\n\t<<toString(x.name)>>\n " });
-
-		// Unlock the door.
-		shortcutPass.makeLocked(nil);
-
-		pathfinder.resetFastPathCache();
-		l = pathfinder.findPath(startRoom, exitRoom);
-		"Path with unlocked door:\n ";
-		l.forEach({ x: "\n\t<<toString(x.name)>>\n " });
-
-		// Lock the door again.
-		shortcutPass.makeLocked(true);
-
-		pathfinder.resetFastPathCache();
-		l = pathfinder.findPath(startRoom, exitRoom);
-		"Path with locked door:\n ";
-		l.forEach({ x: "\n\t<<toString(x.name)>>\n " });
+		inherited();
 	}
 ;
 
+DefineIAction(Pathfind)
+	execAction() {
+		local l;
+
+		l = pathfinder.findPath(foo1, bar1);
+		if(l.length < 2) {
+			"\nNo path.\n ";
+			return;
+		}
+		"\nPath:\n ";
+		l.forEach(function(o) {
+			"\n\t<<o.name>>\n ";
+		});
+	}
+;
+VerbRule(Pathfind) 'pathfind'
+	: PathfindAction verbPhrase = 'pathfind/pathfinding';
+
+DefineIAction(ResetPath)
+	execAction() {
+		"\nResetting pathfinder.\n ";
+		pathfinder.resetFastPath();
+	}
+;
+VerbRule(ResetPath) 'reset' ('path' | 'pathfinder')
+	: ResetPathAction verbPhrase = 'reset/resetting pathfinding';
+
+DefineIAction(TogglePath)
+	execAction() {
+		gameMain.pathToggle = !gameMain.pathToggle;
+		if(gameMain.pathToggle) {
+			door1A.makeLocked(nil);
+			door1A.makeOpen(true);
+
+			door2A.makeLocked(true);
+			door2A.makeOpen(nil);
+
+			"\nOpening door one.\n ";
+		} else {
+			door2A.makeLocked(nil);
+			door2A.makeOpen(true);
+
+			door1A.makeLocked(true);
+			door1A.makeOpen(nil);
+
+			"\nOpening door two.\n ";
+		}
+
+		pathfinder.updatePathfinder(door1A);
+		pathfinder.updatePathfinder(door1B);
+		pathfinder.updatePathfinder(door2A);
+		pathfinder.updatePathfinder(door2B);
+	}
+;
+VerbRule(TogglePath) 'toggle' ('path' | 'paths')
+	: TogglePathAction verbPhrase = 'toggle/toggling paths';
 
 pathfinder: RoomPathfinder;
 
-class Foo: Room 'Foo' "This is a foo room. " fastPathZone = 'foo';
-class Bar: Room 'Bar' "This is a bar room. " fastPathZone = 'bar';
-
-startRoom: Room 'start' "This is the start room." fastPathZone = 'start'
-	east = foo1;
-+me: Person;
-
-foo1: Foo 'foo1' east = foo2 west = startRoom north = shortcutBlock;
-+shortcutBlock: IndirectLockable, Door 'door' 'door' masterObject = shortcutPass;
-foo2: Foo 'foo2' east = foo3 west = foo1;
-foo3: Foo 'foo3' east = foo4 west = foo2;
-foo4: Foo 'foo4' east = foo5 west = foo3;
-foo5: Foo 'foo5' east = bar1 west = foo4 north = shortcutPass;
-+shortcutPass: IndirectLockable, Door 'door' 'door'
-	autoUnlockOnOpen = true
-	dobjFor(Unlock) {
-		check() {}
-		verify() {}
-	}
+class DemoRoom: Room
+	desc = "This is room <<name>>. "
 ;
 
-bar1: Bar 'bar1' east = bar2 west = foo5;
-bar2: Bar 'bar2' east = bar3 west = bar1;
-bar3: Bar 'bar3' east = exitRoom west = bar2;
+class FooRoom: DemoRoom 'Foo' fastPathZone = 'foo';
+class BarRoom: DemoRoom 'Bar' fastPathZone = 'bar';
 
-exitRoom: Room 'exit' "This is the exit room." fastPathZone = 'exit'
-	west = bar3;
+class DemoDoor: IndirectLockable, Door 'door' 'door';
+
+foo1: FooRoom 'foo1' north = foo2 south = foo3;
++me: Person;
+foo2: FooRoom 'foo2' south = foo1 east = door1A;
++door1A: DemoDoor;
+foo3: FooRoom 'foo3' north = foo1 east = door2A;
++door2A: DemoDoor;
+
+bar1: BarRoom 'bar1' north = bar2 south = bar3;
+bar2: BarRoom 'bar2' south = bar1 west = door1B;
++door1B: DemoDoor masterObject = door1A;
+bar3: BarRoom 'bar3' north = bar1 west = door2B;
++door2B: DemoDoor masterObject = door2A;
+
+modify RoomPathfinder
+	executeTurn() {
+		aioSay('\nflush queue\n ');
+		inherited();
+	}
+;

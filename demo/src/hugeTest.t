@@ -557,19 +557,6 @@ nwMap: DemoMapGenerator name = 'NorthWest' roomClass = NWRoom
 
 class DemoDoor: IndirectLockable, AutoClosingDoor 'door' 'door';
 
-
-/*
-demoBefore: Schedulable
-	scheduleOrder = -999
-	nextRunTime = (libGlobal.totalTurns)
-	executeTurn() {
-		demoAfter.ts = gameMain.getTimestamp();
-		incNextRunTime(1);
-		return(nil);
-	}
-;
-*/
-
 demoAfter: Schedulable
 	scheduleOrder = 999
 	ts = nil

@@ -11,7 +11,7 @@
 // Room pathfinder.
 // Creating an instance of this class will automagically enable
 // cached pathfinding.
-class RoomPathfinder: FastPathAutoInit, FastPathMap, Schedulable
+class RoomPathfinder: FastPathAutoInit, FastPathMap
 	// The kind of object we keep track of.
 	fastPathObjectClass = Room
 
@@ -26,8 +26,9 @@ class RoomPathfinder: FastPathAutoInit, FastPathMap, Schedulable
 	// Schedulable properties.  The pathfinder's executeTurn() is
 	// called once per turn after everything else, which is when we
 	// evaluate updates.
-	scheduleOrder = 999
-	nextRunTime = (libGlobal.totalTurns)
+	//scheduleOrder = 999
+	//nextRunTime = (libGlobal.totalTurns)
+	fastPathDaemon = nil
 
 	createZone(id) {
 		local z;
@@ -81,6 +82,9 @@ class RoomPathfinder: FastPathAutoInit, FastPathMap, Schedulable
 		// Check the zones created above for disconnected
 		// subgraphs.
 		verifyFastPathZones();
+
+		fastPathDaemon = new Daemon(self, &updateFastPath, 1);
+		fastPathDaemon.eventOrder = 9999;
 	}
 
 	// Tweak to testPath() to work with rooms as args.
@@ -180,8 +184,8 @@ class RoomPathfinder: FastPathAutoInit, FastPathMap, Schedulable
 
 		l.forEach({ x: _fastPathUpdateZone(x) });
 
-		clearFastPathCache();
-		createFastPathCache();
+		resetFastPathGateways();
+//aioSay('\nflushed updates\n ');
 
 		_fastPathUpdates.setLength(0);
 	}
@@ -328,9 +332,10 @@ class RoomPathfinder: FastPathAutoInit, FastPathMap, Schedulable
 
 	// Called every turn because we're a Schedulable.  Here's where
 	// we flush the update cache.
-	executeTurn() {
-		incNextRunTime(1);
+	updateFastPath() {
+//aioSay('\nupdateFastPath() (<<toString(libGlobal.totalTurns)>>)\n ');
+		//incNextRunTime(1);
 		flushFastPathUpdates();
-		return(nil);
+		//return(nil);
 	}
 ;

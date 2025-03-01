@@ -178,6 +178,7 @@ class FastPathMap: FastPathGraph
 	addGateway(id0, id1, obj?) { return(addEdge(id0, id1, obj)); }
 	getGateway(id0, id1) { return(getEdge(id0, id1)); }
 	removeGateway(id0, id1) { return(removeEdge(id0, id1)); }
+	removeGateways() { return(removeVertices()); }
 	getGateways() { return(getEdges()); }
 
 	canonicalizeZone(z) {
@@ -328,6 +329,13 @@ class FastPathMap: FastPathGraph
 		getZones().forEach({ x: resetFastPathZone(x) });
 
 		clearFastPathCache();
+		createFastPathCache();
+	}
+
+	resetFastPathGateways() {
+		clearFastPathCache();
+		removeGateways();
+		initializeFastPathMap();
 		createFastPathCache();
 	}
 

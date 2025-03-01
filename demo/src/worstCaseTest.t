@@ -44,68 +44,78 @@ gameMain: GameMainDef
 
 	doorDaemon = nil
 
+	playerInCorner = true
+	useDoors = true
+
 	getTimestamp() { return(new Date()); }
 	getInterval(d) { return(((new Date() - d) * 86400).roundToDecimal(5)); }
 
 	toggleDoors() {
-/*
-		local d0, d1, i;
+		local d0, d1, i, n;
 
-		for(i = 1; i <= doorList.length; i += 4) {
-			if((rand(100) + 1) < 90) continue;
+		if(!useDoors)
+			return;
+
+		n = 0;
+
+		for(i = 1; i <= worstCase.doorList.length; i += 4) {
+			if((rand(100) + 1) < 25) continue;
 			if((rand(100) + 1) < 50) {
 				d0 = i;
 				d1 = i + 2;
-				//d0 = doorList[i];
-				//d1 = doorList[i - 1];
 			} else {
 				d0 = i + 2;
 				d1 = i;
-				//d0 = doorList[i - 1];
-				//d1 = doorList[i];
 			}
-			_toggleDoor(d0, true);
-			_toggleDoor(d1, nil);
+
+			worstCase.toggleDoor(d0, true,
+				{ x: gameMain.updateDoors(x) });
+			worstCase.toggleDoor(d1, nil,
+				{ x: gameMain.updateDoors(x) });
+			n += 4;
 		}
-*/
+		//aioSay('\nupdating <<toString(n)>> doors (<<toString(libGlobal.totalTurns)>>)\n ');
 	}
 
-	_toggleDoor(idx, st) {
-/*
-		local d0, d1;
-
-		d0 = doorList[idx];
-		d1 = doorList[idx + 1];
-
-		d0.makeLocked(st);
-
-		gameMain.updatePathfinder(d0);
-		gameMain.updatePathfinder(d1);
-*/
+	updateDoors(lst) {
+		if(!isCollection(lst))
+			return;
+		lst.forEach({ x: pathfinder.updatePathfinder(x) });
 	}
 
 	newGame() {
-		local rm;
+		local rm, z;
 
+		pathfinder.resetFastPath();
 		doorDaemon = new Daemon(self, &toggleDoors, 1);
 
-		if((rm = worstCase.getRandomRoom()) != nil)
+		if(playerInCorner) {
+			// Place the player in the last room of the lower left
+			// zone.  This should be a corner shared with two other
+			// zones (if we're not in a 1x1 map).  This is useful
+			// for monitoring the zone connections.
+			z = worstCase.zones[worstCase.zones.length -
+				worstCase.zoneWidth + 1];
+			if(z != nil)
+				rm = z._getRoom(z._mapSize);
+		} else {
+			// Put the player in a random room.
+			rm = worstCase.getRandomRoom();
+		}
+
+		if(rm != nil)
 			initialPlayerChar.moveInto(rm);
 
 		inherited();
 	}
 ;
 
-pathfinder: RoomPathfinder
-	initializeFastPath() {
-		inherited();
-		resetFastPath();
-	}
-;
+pathfinder: RoomPathfinder;
 
 // Update the worstCase pathfinder to use fastPath.
 modify worstCase
 	execAfterMe = (nilToList(inherited()) + [ fastPathAutoInit ])
+	useDoors = (gameMain.useDoors)
 	findPath(actor, rm0, rm1) {
 		return(pathfinder.findPath(rm0, rm1));
 	}
@@ -114,3 +124,83 @@ modify worstCase
 modify WorstCaseRoom
 	fastPathZone = ('zone' + simpleRandomMapGenerator.zoneNumber)
 ;
+
+//modify WorstCaseMapGenerator mapWidth = 10;
+modify WorstCaseMapGenerator mapWidth = 5;
+
+modify WorstCaseAgenda
+/*
+	invokeItem() {
+		local a, l, r, rm0, rm1, rmt;
+
+		if((a = getActor()) == nil) return;
+		if((rm0 = a.getOutermostRoom()) == nil) return;
+
+		r = inherited();
+
+		if(r != true) return;
+
+		rm1 = a.getOutermostRoom();
+		if(rm0 != rm1) return;
+		if((rmt = getTargetRoom()) == nil) return;
+		if(rm0 == rmt) return;
+
+		l = worstCase.findPath(a, rm0, rmt);
+
+		aioSay('\n===<<toString(a.name)>> MOVEMENT FAILURE===\n ');
+		aioSay('\n\tlocation:  <<rm0.name>> <<rm0.fastPathZone>>\n ');
+		aioSay('\n\ttarget:  <<rmt.name>> <<rmt.fastPathZone>>\n ');
+		aioSay('\n\tpath:\n ');
+		l.forEach(function(o) {
+			aioSay('\n\t\t<<o.name>> <<o.fastPathZone>>\n ');
+		});
+		aioSay('\n===<<toString(a.name)>> MOVEMENT FAILURE===\n ');
+	}
+*/
+	fastPathMoveFailure(e) {
+		local l, rm0;
+
+		aioSay('\n===MOVEMENT FAILURE===\n ');
+/*
+return;
+		aioSay('\n\tactor = <<toString(e.actor ? e.actor.name
+			: 'unknown')>>\n ');
+		rm0 = (e.actor ? e.actor.getOutermostRoom() : nil);
+		aioSay('\n\tlocation = <<toString(rm0
+			? rm0.name + ' ' + rm0.fastPathZone: 'unknown')>>\n ');
+		if(rm0 != nil) {
+			aioSay('\n\tDoors:\n ');
+			rm0.contents.subset({ x: x.ofKind(Door) })
+				.forEach(function(o) {
+					aioSay('\n\t\t<<o.name>>:
+						<<(o.isOpen() ? 'open'
+						: 'closed')>>\n ');
+			});
+		}
+		aioSay('\n\tdestination = <<toString(e.dest
+			? e.dest.name + ' ' + e.dest.fastPathZone
+			: 'unknown')>>\n ');
+		l = worstCase.findPath(e.actor, rm0, e.dest);
+		aioSay('\n\tPath:\n ');
+		l.forEach(function(o) {
+			aioSay('\n\t\t<<o.name>> <<o.fastPathZone>>\n ');
+		});
+		pathfinder.resetFastPath();
+		l = worstCase.findPath(e.actor, rm0, e.dest);
+		aioSay('\n\tPath:\n ');
+		l.forEach(function(o) {
+			aioSay('\n\t\t<<o.name>> <<o.fastPathZone>>\n ');
+		});
+		aioSay('\n===MOVEMENT FAILURE===\n ');
+*/
+	}
+;
+
+/*
+modify RoomPathfinder
+	executeTurn() {
+		aioSay('\nFlushing queue\n ');
+		inherited();
+	}
+;
+*/
