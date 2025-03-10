@@ -336,13 +336,13 @@ class RoomPathfinder: FastPathAutoInit, FastPathMap
 		flushFastPathUpdates();
 	}
 
-	canonicalizeVertex(v) {
+	resolveVertex(v) {
 		local z;
 
 		if(isRoom(v)) {
 			if((z = getZone(v.fastPathZone)) == nil)
 				return(nil);
-			return(z.canonicalizeVertex(v));
+			return(z.resolveVertex(v));
 		}
 
 		return(inherited(v));

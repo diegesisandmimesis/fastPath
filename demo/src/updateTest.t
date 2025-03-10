@@ -48,12 +48,49 @@
 
 #include "fastPath.h"
 
-versionInfo: GameID;
+versionInfo: GameID
+	inlineCommand(cmd) { "<b>&gt;<<toString(cmd).toUpper()>></b>"; }
+	printCommand(cmd) { "<.p>\n\t<<inlineCommand(cmd)>><.p> "; }
+	showAbout() {
+		"\n ";
+		"This is an interactive test for updating the pathfinding
+		cache.  The gameworld consists of six rooms:  <q>Foo 1</q>
+		is the start room, with <q>Foo 2</q> to the north and
+		<q>Foo 3</q> to the south.  There's a door east from
+		<q>Foo2</q> to <q>Bar2</q> and a door east from <q>Foo3</q>
+		to <q>Bar3</q>  Finally there's a <q>Bar1</q> south of
+		<q>Bar2</q> and north of <q>Bar3</q>.
+		<.p>
+		Only one of the doors between the <q>foo</q> rooms and the
+		<q>bar</q> rooms is open at a time, except at the start
+		when <b>NEITHER</b> door is open.  Meaning there's
+		no path between <q>Foo 1</q> and <q>Bar 1</q> at the start.
+		<.p>
+		Some commands available in the demo:
+		<<printCommand('pathfind')>>
+		\n\t\tPrints the path between <q>Foo 1</q> and <q>Bar 1</q>
+		\n\t\tusing the fastPath pathfinder.
+		<<printCommand('adv3 pathfind')>>
+		\n\t\tPrints the path between <q>Foo 1</q> and <q>Bar 1</q>
+		\n\t\tusing adv3's roomPathFinder.findPath().
+		<<printCommand('toggle path')>>
+		\n\t\tOpen one of the doors, closing and locking the other.
+		\n<.p>\n ";
+	}
+;
 gameMain: GameMainDef
 	initialPlayerChar = me
 
 	// Flag used to keep track of what state the doors are in.
 	pathToggle = nil
+
+	newGame() {
+		intro();
+		inherited();
+	}
+
+	intro() {
+	}
 ;
 
 // The >PATHFIND action, which uses the fastPath pathfinder.

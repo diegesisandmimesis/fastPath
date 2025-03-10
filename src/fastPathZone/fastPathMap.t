@@ -194,7 +194,7 @@ class FastPathMap: FastPathGraph
 		if(isVertex(v)) return(v);
 		l = getZones();
 		for(i = 1; i <= l.length; i++)
-			if((r = l[i].getVertex(v)) != nil) return(r);
+			if((r = l[i].resolveVertex(v)) != nil) return(r);
 
 		return(nil);
 	}

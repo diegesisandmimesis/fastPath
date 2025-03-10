@@ -121,8 +121,7 @@ class FastPathGraph: DirectedGraph
 	// verify that the last item in the list is the destination vertex.
 	testPath(v0, v1, lst) {
 		if(!lst || !lst.length) return(nil);
-		return(canonicalizeVertex(v1)
-			== canonicalizeVertex(lst[lst.length]));
+		return(resolveVertex(v1) == resolveVertex(lst[lst.length]));
 	}
 
 	// More robust test mechanism.  Given two vertices and a path list,
@@ -146,12 +145,14 @@ class FastPathGraph: DirectedGraph
 		
 		for(i = 1; i <= l.length; i++) {
 
-			v = canonicalizeVertex(l[i]);
+			v = resolveVertex(l[i]);
 			if(!isVertex(v)) return(nil);
-			if(v != canonicalizeVertex(lst[i]))
+			if(v != resolveVertex(lst[i]))
 				return(nil);
 		}
 
 		return(true);
 	}
+
+	resolveVertex(v) { return(canonicalizeVertex(v)); }
 ;

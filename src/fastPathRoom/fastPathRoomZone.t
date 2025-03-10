@@ -97,8 +97,8 @@ class FastPathRoomZone: FastPathZone
 		return(getVertex(rm.fastPathID));
 	}
 
-	canonicalizeVertex(v) {
-		if(isRoom(v)) return(inherited(v.fastPathID));
+	resolveVertex(v) {
+		if(isRoom(v)) return(roomToVertex(v));
 		return(inherited(v));
 	}
 ;
