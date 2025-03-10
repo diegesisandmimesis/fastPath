@@ -6,6 +6,30 @@
 //
 // This is a very simple demonstration "game" for the fastPath library.
 //
+// This demo is intended to be a minimalistic test for updating cached
+// pathfinding data.  It provides a gameworld consisting of six rooms,
+// with room "Foo 1" being the "start" location and "Bar 1" being the
+// "destination" location.  The rooms are connected by two possible
+// paths, each containing a door.  Only one door is ever open at a time,
+// meaning there's only ever one valid path:  either [ foo1, foo2, bar2,
+// bar1 ] or [ foo1, foo3, bar3, bar1 ].
+//
+// When the demo starts NEITHER door is open, meaning there is no
+// path between Foo 1 and Bar 1.
+//
+// The demo implements several bespoke actions:
+//
+//	> PATHFIND
+//		Prints the path between room Foo 1 and room Bar 1 using
+//		the fastPath pathfinder.
+//
+//	> ADV3 PATHFIND
+//		Prints the path between room Foo 1 and room Bar 1 using
+//		adv3's roomPathFinder.findPath().
+//
+//	> TOGGLE PATH
+//		Open one door and close and lock the other.
+//
 // It can be compiled via the included makefile with
 //
 //	# t3make -f updateTest.t3m
@@ -28,26 +52,24 @@ versionInfo: GameID;
 gameMain: GameMainDef
 	initialPlayerChar = me
 
-	getTimestamp() { return(new Date()); }
-	getInterval(d) { return(((new Date() - d) * 86400).roundToDecimal(3)); }
-
+	// Flag used to keep track of what state the doors are in.
 	pathToggle = nil
-
-	newGame() {
-		inherited();
-	}
 ;
 
+// The >PATHFIND action, which uses the fastPath pathfinder.
 DefineIAction(Pathfind)
 	execAction() {
 		local l;
 
+		// Get the path, complaining if pathfinding fails.
 		l = pathfinder.findPath(foo1, bar1);
 		if(l.length < 2) {
 			"\nNo path.\n ";
 			return;
 		}
-		"\nPath:\n ";
+
+		// Output the room names.
+		"\nfastPath pathfinder says:\n ";
 		l.forEach(function(o) {
 			"\n\t<<o.name>>\n ";
 		});
@@ -56,6 +78,30 @@ DefineIAction(Pathfind)
 VerbRule(Pathfind) 'pathfind'
 	: PathfindAction verbPhrase = 'pathfind/pathfinding';
 
+// Copy of >PATHFIND that uses adv3's roomPathfinder.findPath().
+DefineIAction(AdvPathfind)
+	execAction() {
+		local l;
+
+		// roomPathfinder.findPath() returns nil (instead of
+		// an empty list) on failure, so we check for that.
+		l = roomPathFinder.findPath(me, foo1, bar1);
+		if((l == nil) || (l.length < 2)) {
+			"\nNo path.\n ";
+			return;
+		}
+
+		"\nAdv3 pathfinder says:\n ";
+		l.forEach(function(o) {
+			"\n\t<<o.name>>\n ";
+		});
+	}
+;
+VerbRule(AdvPathfind) ( 'adv' | 'adv3' ) 'pathfind'
+	: AdvPathfindAction verbPhrase = 'adv3 pathfind/pathfinding';
+
+// Resets the fastPath pathfinder.  Shouldn't be needed, only here for
+// testing.
 DefineIAction(ResetPath)
 	execAction() {
 		"\nResetting pathfinder.\n ";
@@ -65,47 +111,47 @@ DefineIAction(ResetPath)
 VerbRule(ResetPath) 'reset' ('path' | 'pathfinder')
 	: ResetPathAction verbPhrase = 'reset/resetting pathfinding';
 
+// Closes and locks one door and opens and unlocks the other.
 DefineIAction(TogglePath)
 	execAction() {
 		gameMain.pathToggle = !gameMain.pathToggle;
 		if(gameMain.pathToggle) {
-			door1A.makeLocked(nil);
 			door1A.makeOpen(true);
+			door1A.makeLocked(nil);
 
-			door2A.makeLocked(true);
 			door2A.makeOpen(nil);
+			door2A.makeLocked(true);
 
 			"\nOpening door one.\n ";
 		} else {
-			door2A.makeLocked(nil);
 			door2A.makeOpen(true);
+			door2A.makeLocked(nil);
 
-			door1A.makeLocked(true);
 			door1A.makeOpen(nil);
+			door1A.makeLocked(true);
 
 			"\nOpening door two.\n ";
 		}
-
-		pathfinder.updatePathfinder(door1A);
-		pathfinder.updatePathfinder(door1B);
-		pathfinder.updatePathfinder(door2A);
-		pathfinder.updatePathfinder(door2B);
 	}
 ;
 VerbRule(TogglePath) 'toggle' ('path' | 'paths')
 	: TogglePathAction verbPhrase = 'toggle/toggling paths';
 
+// Declare a generic RoomPathfinder instances.
 pathfinder: RoomPathfinder;
 
-class DemoRoom: Room
-	desc = "This is room <<name>>. "
-;
+// Class for our rooms.  Just provides a dumb default description.
+class DemoRoom: Room desc = "This is room <<name>>. ";
 
+// Classes for our two "zones" (of three rooms each).
 class FooRoom: DemoRoom 'Foo' fastPathZone = 'foo';
 class BarRoom: DemoRoom 'Bar' fastPathZone = 'bar';
 
+// Class for our doors.
 class DemoDoor: IndirectLockable, Door 'door' 'door';
 
+// Our simple six-room gameworld.
+// First the "foo" zone.
 foo1: FooRoom 'foo1' north = foo2 south = foo3;
 +me: Person;
 foo2: FooRoom 'foo2' south = foo1 east = door1A;
@@ -113,15 +159,9 @@ foo2: FooRoom 'foo2' south = foo1 east = door1A;
 foo3: FooRoom 'foo3' north = foo1 east = door2A;
 +door2A: DemoDoor;
 
+// Now the "bar" zone.
 bar1: BarRoom 'bar1' north = bar2 south = bar3;
 bar2: BarRoom 'bar2' south = bar1 west = door1B;
 +door1B: DemoDoor masterObject = door1A;
 bar3: BarRoom 'bar3' north = bar1 west = door2B;
 +door2B: DemoDoor masterObject = door2A;
-
-modify RoomPathfinder
-	executeTurn() {
-		aioSay('\nflush queue\n ');
-		inherited();
-	}
-;

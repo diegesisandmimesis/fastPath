@@ -34,7 +34,7 @@ modify Room
 			if(!_checkFastPathConnector(actor, c, dst))
 				return;
 
-			if((cb != nil) && ((cb)(d, dst) != true))
+			if((cb != nil) && ((cb)(actor, c, d, dst) != true))
 				return;
 
 			r.append(dst);
@@ -44,6 +44,23 @@ modify Room
 	}
 
 	_checkFastPathConnector(actor, conn, dst) {
+#ifndef FAST_PATH_TRY_CATCH
+		local i, l;
+
+		if(!actor.canTravelVia(conn, dst)) return(nil);
+		if(!conn.canTravelerPass(actor)) return(nil);
+		l = conn.travelBarrier;
+		if(!isCollection(l)) l = [ l ];
+		for(i = 1; i <= l.length; i++) {
+			if(!l[i].canTravelerPass(actor))
+				return(nil);
+		}
+
+		if(!conn.fastPathPassable(actor, dst))
+			return(nil);
+
+		return(true);
+#else // FAST_PATH_TRY_CATCH
 		local f, r, tr;
 
 		tr = gTranscript;
@@ -72,6 +89,22 @@ modify Room
 			fastPathFilter.active = f;
 			return(r == true);
 		}
+#endif // FAST_PATH_TRY_CATCH
+	}
+
+;
+
+modify TravelConnector
+	fastPathPassable(actor, dst?) {
+		if(!ofKind(BasicOpenable))
+			return(true);
+		if(isOpen())
+			return(true);
+		if(!ofKind(Lockable))
+			return(true);
+		if(!isLocked())
+			return(true);
+		return(nil);
 	}
 ;
 

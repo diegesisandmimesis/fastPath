@@ -53,8 +53,11 @@ gameMain: GameMainDef
 	// Utility method to connect two rooms north to south.
 	// Not for general use, this demo only.
 	_connectRoom(rm0, rm1) {
+		// Actually connect the rooms.
 		rm0.north = rm1;
 		rm1.south = rm0;
+
+		// Notify the pathfinder about the new connections.
 		pathfinder.addEdge(rm0.name, rm1.name);
 		pathfinder.addEdge(rm1.name, rm0.name);
 	}
@@ -74,7 +77,6 @@ gameMain: GameMainDef
 	// Time how long it takes to create the pathfinding cache.
 	timeCache() {
 		local ts;
-
 		
 		ts = getTimestamp();
 		pathfinder.resetFastPath();
@@ -131,9 +133,15 @@ gameMain: GameMainDef
 		t0 = runTest('RoomPathfinder.findPath()', function(n) {
 			local l, rm0, rm1;
 
+			// Pick two random rooms.
 			rm0 = pickRandomRoom();
 			rm1 = pickRandomRoom();
+
+			// Compute the path.
 			l = pathfinder.findPath(rm0, rm1);
+
+			// Make sure the computed path starts with
+			// rm0 and ends with rm1.
 			if(!pathfinder.testPath(rm0, rm1, l))
 				"ERROR: pathfinding failed\n ";
 		});
@@ -144,9 +152,14 @@ gameMain: GameMainDef
 		t1 = runTest('roomPathfinder.findPath()', function(n) {
 			local l, rm0, rm1;
 
+			// Pick random rooms.
 			rm0 = pickRandomRoom();
 			rm1 = pickRandomRoom();
+
+			// Compute the path.
 			l = roomPathFinder.findPath(me, rm0, rm1);
+
+			// Stock adv3 pathfinder returns nil on failure.
 			if(l == nil) "ERROR: no path\n ";
 		});
 

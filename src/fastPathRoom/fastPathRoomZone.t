@@ -92,27 +92,13 @@ class FastPathRoomZone: FastPathZone
 		return(true);
 	}
 
-/*
-	findPath(v0, v1) {
-		local l, r;
-
-aioSay('\nfindPath(<<toString(v0)>>, <<toString(v1)>>\n ');
-		if(isRoom(v0) && ((v0 = roomToVertex(v0)) == nil)) return([]);
-		if(isRoom(v1) && ((v1 = roomToVertex(v1)) == nil)) return([]);
-
-		if(!isVertex(v0) || !isVertex(v1)) return([]);
-
-		l = inherited(v0, v1);
-
-		r = new Vector(l.length());
-		l.forEach({ x: r.append(x.data) });
-
-		return(r);
-	}
-*/
-
 	roomToVertex(rm) {
 		if(!isRoom(rm)) return(nil);
 		return(getVertex(rm.fastPathID));
+	}
+
+	canonicalizeVertex(v) {
+		if(isRoom(v)) return(inherited(v.fastPathID));
+		return(inherited(v));
 	}
 ;

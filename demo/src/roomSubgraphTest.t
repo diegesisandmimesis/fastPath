@@ -21,9 +21,6 @@
 #include <adv3.h>
 #include <en_us.h>
 
-#include <date.h>
-#include <bignum.h>
-
 #include "fastPath.h"
 
 versionInfo: GameID;
@@ -31,11 +28,8 @@ gameMain: GameMainDef
 	initialPlayerChar = me
 
 	newGame() {
-		local l;
-
-		l = pathfinder.findPath(foo1, bar3);
-
-		if(pathfinder.testPath(foo1, bar3, l)) {
+		if(pathfinder.verifyPath(foo1, bar3,
+			[ foo1, foo2, foo3, baz1, bar1, bar2, bar3 ])) {
 			"\npassed all tests\n ";
 		} else {
 			"\npathfinding FAILED\n ";

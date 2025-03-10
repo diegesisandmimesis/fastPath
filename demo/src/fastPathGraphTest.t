@@ -4,7 +4,7 @@
 // Version 1.0
 // Copyright 2022 Diegesis & Mimesis
 //
-// This is a very simple demonstration "game" for the fastPath library.
+// This is a minimal test of the base fastPathGraph pathfinder.
 //
 // It can be compiled via the included makefile with
 //
@@ -19,24 +19,32 @@
 #include <adv3.h>
 #include <en_us.h>
 
+#include <date.h>
+#include <bignum.h>
+
 #include "fastPath.h"
 
 versionInfo: GameID;
 gameMain: GameMainDef
+	// All we do is call the graph's verifyPath() method.  It attempts
+	// to compute the path between the vertices given as the first
+	// two args.  It then compares the computed path to the third
+	// arg, returning boolean true if they match, nil otherwise.
 	newGame() {
-		local p;
-
-		if((p = graph0.findPath('in', 'out')) == nil) {
-			"\nGot nil path\n ";
-			return;
+		"\n ";
+		if(graph0.verifyPath('in', 'out',
+			[ 'in', 'foo', 'baz', 'out' ])) {
+			"passed all tests";
+		} else {
+			"ERROR:  pathfinding produced invalid path";
 		}
-		"\nPath:\n ";
-		p.forEach(function(o) {
-			"\n\t<<toString(o.vertexID)>>\n ";
-		});
+		"\n ";
 	}
 ;
 
+// Five node graph.  The "in" node is connected only to "foo";
+// "out" is connected to "baz", and "foo", "bar", and "baz" are all
+// connected to each other.
 graph0: FastPathGraph
 	[	'in',	'foo',	'bar',	'baz',	'out'	]
 	[

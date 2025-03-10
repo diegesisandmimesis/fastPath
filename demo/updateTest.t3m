@@ -10,3 +10,4 @@
 -lib ../fastPath
 -source src/updateTest.t
 -source reflect.t
+-source extensions/pathfind.t

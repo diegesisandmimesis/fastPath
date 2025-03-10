@@ -59,7 +59,7 @@ gameMain: GameMainDef
 		n = 0;
 
 		for(i = 1; i <= worstCase.doorList.length; i += 4) {
-			if((rand(100) + 1) < 25) continue;
+			if((rand(100) + 1) < 90) continue;
 			if((rand(100) + 1) < 50) {
 				d0 = i;
 				d1 = i + 2;
@@ -125,74 +125,12 @@ modify WorstCaseRoom
 	fastPathZone = ('zone' + simpleRandomMapGenerator.zoneNumber)
 ;
 
-//modify WorstCaseMapGenerator mapWidth = 10;
-modify WorstCaseMapGenerator mapWidth = 5;
+modify WorstCaseMapGenerator mapWidth = 10;
+//modify WorstCaseMapGenerator mapWidth = 8;
 
 modify WorstCaseAgenda
-/*
-	invokeItem() {
-		local a, l, r, rm0, rm1, rmt;
-
-		if((a = getActor()) == nil) return;
-		if((rm0 = a.getOutermostRoom()) == nil) return;
-
-		r = inherited();
-
-		if(r != true) return;
-
-		rm1 = a.getOutermostRoom();
-		if(rm0 != rm1) return;
-		if((rmt = getTargetRoom()) == nil) return;
-		if(rm0 == rmt) return;
-
-		l = worstCase.findPath(a, rm0, rmt);
-
-		aioSay('\n===<<toString(a.name)>> MOVEMENT FAILURE===\n ');
-		aioSay('\n\tlocation:  <<rm0.name>> <<rm0.fastPathZone>>\n ');
-		aioSay('\n\ttarget:  <<rmt.name>> <<rmt.fastPathZone>>\n ');
-		aioSay('\n\tpath:\n ');
-		l.forEach(function(o) {
-			aioSay('\n\t\t<<o.name>> <<o.fastPathZone>>\n ');
-		});
-		aioSay('\n===<<toString(a.name)>> MOVEMENT FAILURE===\n ');
-	}
-*/
 	fastPathMoveFailure(e) {
-		local l, rm0;
-
 		aioSay('\n===MOVEMENT FAILURE===\n ');
-/*
-return;
-		aioSay('\n\tactor = <<toString(e.actor ? e.actor.name
-			: 'unknown')>>\n ');
-		rm0 = (e.actor ? e.actor.getOutermostRoom() : nil);
-		aioSay('\n\tlocation = <<toString(rm0
-			? rm0.name + ' ' + rm0.fastPathZone: 'unknown')>>\n ');
-		if(rm0 != nil) {
-			aioSay('\n\tDoors:\n ');
-			rm0.contents.subset({ x: x.ofKind(Door) })
-				.forEach(function(o) {
-					aioSay('\n\t\t<<o.name>>:
-						<<(o.isOpen() ? 'open'
-						: 'closed')>>\n ');
-			});
-		}
-		aioSay('\n\tdestination = <<toString(e.dest
-			? e.dest.name + ' ' + e.dest.fastPathZone
-			: 'unknown')>>\n ');
-		l = worstCase.findPath(e.actor, rm0, e.dest);
-		aioSay('\n\tPath:\n ');
-		l.forEach(function(o) {
-			aioSay('\n\t\t<<o.name>> <<o.fastPathZone>>\n ');
-		});
-		pathfinder.resetFastPath();
-		l = worstCase.findPath(e.actor, rm0, e.dest);
-		aioSay('\n\tPath:\n ');
-		l.forEach(function(o) {
-			aioSay('\n\t\t<<o.name>> <<o.fastPathZone>>\n ');
-		});
-		aioSay('\n===MOVEMENT FAILURE===\n ');
-*/
 	}
 ;
 

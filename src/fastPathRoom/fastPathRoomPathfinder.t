@@ -333,9 +333,18 @@ class RoomPathfinder: FastPathAutoInit, FastPathMap
 	// Called every turn because we're a Schedulable.  Here's where
 	// we flush the update cache.
 	updateFastPath() {
-//aioSay('\nupdateFastPath() (<<toString(libGlobal.totalTurns)>>)\n ');
-		//incNextRunTime(1);
 		flushFastPathUpdates();
-		//return(nil);
+	}
+
+	canonicalizeVertex(v) {
+		local z;
+
+		if(isRoom(v)) {
+			if((z = getZone(v.fastPathZone)) == nil)
+				return(nil);
+			return(z.canonicalizeVertex(v));
+		}
+
+		return(inherited(v));
 	}
 ;

@@ -194,6 +194,14 @@ subclass-specific methods, like ``RoomPathfinder.updatePathfinder()``.
 
   Provided as a very simple check against computed paths.
 
+* ``verifyPath(vertex0, vertex1, path)``
+
+  Given two vertices and an array, computes the path between the vertices
+  and verifies that it is stepwise equal to the third argument.
+
+  The path passed as an argument can be an array of either ``Vertex`` instances
+  or vertex IDs.
+
 <a name="fast-path-vertex"/></a>
 #### FastPathVertex
 

@@ -124,4 +124,34 @@ class FastPathGraph: DirectedGraph
 		return(canonicalizeVertex(v1)
 			== canonicalizeVertex(lst[lst.length]));
 	}
+
+	// More robust test mechanism.  Given two vertices and a path list,
+	// generate the path between the vertices and compare it to
+	// the list.
+	// First two args can be vertex IDs or Vertex instances, last
+	// arg must be an array, can be of vertex IDs or of Vertex instances.
+	verifyPath(v0, v1, lst) {
+		local i, l, v;
+
+		if(!isCollection(lst))
+			return(nil);
+
+		l = findPath(v0, v1);
+
+		if(!isCollection(l))
+			return(nil);
+
+		if(lst.length != l.length)
+			return(nil);
+		
+		for(i = 1; i <= l.length; i++) {
+
+			v = canonicalizeVertex(l[i]);
+			if(!isVertex(v)) return(nil);
+			if(v != canonicalizeVertex(lst[i]))
+				return(nil);
+		}
+
+		return(true);
+	}
 ;
