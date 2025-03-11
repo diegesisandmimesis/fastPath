@@ -297,23 +297,51 @@ class FastPathMap: FastPathGraph
 		return(r);
 	}
 
+	// Choose between multiple paths between two zones.
+	// Our args are a zone, a gateway, and a vertex (in that order).
+	// The vertex is where we currently are.  The zone is the
+	// zone the vertex is in.  The gateway is a data structure
+	// that lists all the connections between the zone we're in
+	// and some other zone we're trying to reach.
 	pickNextHop(z, g, v) {
 		local i, l, lst, pick, shortPath;
 
+		// Shortest path so far.
 		shortPath = nil;
+
+		// Gateway option we want to take.
 		pick = nil;
 
+		// Canonicalize the vertex we're pathing from.
 		v = z.getVertex(v.vertexID);
 
+		// Get the list of connections between the two zones.
 		lst = g.getNextHops();
+
+		// Iterate over all our options.
 		for(i = 1; i <= lst.length(); i++) {
+			// Compute the path from the starting vertex to
+			// the gateway to the next zone.  This is the
+			// path from where we are to the room in this
+			// zone that connects to the other zone.
 			l = z.findPath(v, lst[i].src);
+
+			// If we don't have a contender yet or if the
+			// current option is shorter that what we've seen
+			// so far, make it our current pick.
 			if((pick == nil) || (shortPath.length > l.length)) {
 				shortPath = l;
 				pick = lst[i];
 			}
 		}
 
+		// Return our pick.
+		// pick.dst is the "far side" of the gateway option
+		// we picked--that's going to be the room in the other
+		// zone that connects with the exit from the current
+		// zone we picked.
+		// shortPath is the path from the current vertex to
+		// the "near side" gateway option.
 		return(new FastPathNextHopPick(pick.dst, shortPath));
 	}
 
@@ -323,6 +351,7 @@ class FastPathMap: FastPathGraph
 		return(resolveVertex(v1) == resolveVertex(lst[lst.length]));
 	}
 
+	// Reset and re-compute the path cache.
 	resetFastPath() {
 		getZones().forEach({ x: x.resetFastPathGateways() });
 		getZones().forEach({ x: flushFastPathGatewayQueue(x) });
@@ -332,6 +361,9 @@ class FastPathMap: FastPathGraph
 		createFastPathCache();
 	}
 
+	// Reset the gateways (the connections between zones).
+	// This involves destroying the data structures and re-doing
+	// whatever we did to enumerate them in the first place.
 	resetFastPathGateways() {
 		clearFastPathCache();
 		removeGateways();
@@ -339,6 +371,7 @@ class FastPathMap: FastPathGraph
 		createFastPathCache();
 	}
 
+	// Reset the cache for a single zone.
 	resetFastPathZone(z) {
 		if((z = canonicalizeZone(z)) == nil) return(nil);
 
@@ -360,18 +393,26 @@ class FastPathMap: FastPathGraph
 		// Figure out which zone we're looking at.
 		zoneID = (zoneID ? zoneID : fastPathDefaultZone);
 
+		// If we didn't find anything that needed fixing, we
+		// don't have to do anything else.
 		if(!fixFastPathSubgraphs(zoneID))
 			return(nil);
 
+		// We DID find something that needs fixing, so we
+		// reset whatever we have cached.
 		getZones().forEach({ x: x.resetFastPathGateways() });
 		getZones().forEach({ x: flushFastPathGatewayQueue(x) });
 		getZones().forEach({ x: resetFastPathZone(x) });
 		clearFastPathCache();
 
+		// We clear our vertices, which correspond to the zones.
 		removeVertices();
 
+		// We re-do whatever we did to enumerate the zones in
+		// the first place.
 		initializeFastPathMap();
 
+		// And finally we re-create the cache.
 		getZones().forEach({ x: x.createFastPathCache() });
 		createFastPathCache();
 
@@ -404,8 +445,11 @@ class FastPathMap: FastPathGraph
 
 		// Iterate over all the subgraphs.
 		for(i = 1; i <= l.length; i++) {
+			// New zone ID for the repaired subgraph.
 			id = _getFastPathSubgraphID(zoneID, i);
 
+			// Let the vertices in the repaired subgraph
+			// know what their new zone ID is.
 			l[i].forEach(function(v) {
 				if((v = z.canonicalizeVertex(v)) == nil)
 					return;

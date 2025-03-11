@@ -23,13 +23,12 @@ class RoomPathfinder: FastPathAutoInit, FastPathMap
 
 	_fastPathUpdates = perInstance(new Vector())
 
-	// Schedulable properties.  The pathfinder's executeTurn() is
-	// called once per turn after everything else, which is when we
-	// evaluate updates.
-	//scheduleOrder = 999
-	//nextRunTime = (libGlobal.totalTurns)
+	// Daemon that looks for updates every turn.
 	fastPathDaemon = nil
 
+	// Tweak to the base method.  For room pathfinders we always
+	// want an actor defined because pathfinding through rooms
+	// depends on the actor.
 	createZone(id) {
 		local z;
 
@@ -185,7 +184,6 @@ class RoomPathfinder: FastPathAutoInit, FastPathMap
 		l.forEach({ x: _fastPathUpdateZone(x) });
 
 		resetFastPathGateways();
-//aioSay('\nflushed updates\n ');
 
 		_fastPathUpdates.setLength(0);
 	}

@@ -36,6 +36,11 @@ class FastPathZone: FastPathGraph
 		if(id != nil) fastPathZoneID = id;
 	}
 
+	// Add an object as a vertex and add it to the queue.
+	// The queue is to remind us that we have to figure out the
+	// new vertex's edges, which we don't do immediately because
+	// subclasses might have to do a lot of elaborate gymnastics
+	// for this step.
 	queueFastPathVertex(obj) {
 		local v;
 
@@ -56,6 +61,7 @@ class FastPathZone: FastPathGraph
 		return(true);
 	}
 
+	// Go through the vertex queue and figure out the edges.
 	flushFastPathVertexQueue() {
 		_fastPathVertexQueue.forEach({ x: addFastPathGateways(x) });
 	}
@@ -76,6 +82,5 @@ class FastPathZone: FastPathGraph
 	resetFastPathGateways() {
 		getVertices().forEach({ x: resetFastPathGateway(x) });
 	}
-	//resetFastPathGateway(v) { return(nil); }
 	resetFastPathGateway(v) { addFastPathGateways(v); }
 ;

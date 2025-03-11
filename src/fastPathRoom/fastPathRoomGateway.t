@@ -8,5 +8,6 @@
 
 #include "fastPath.h"
 
-class FastPathRoomGateway: FastPathGateway
-;
+// Kinda worthless, but we ad a subclass in case somebody else
+// wants to make changes ONLY to the room gateway class.
+class FastPathRoomGateway: FastPathGateway;

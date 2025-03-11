@@ -8,15 +8,23 @@
 
 #include "fastPath.h"
 
+// Singleton that handles updating all room pathfinders.
 fastPathRoomUpdater: object
 	updatePathfinders(obj) {
 		forEachInstance(RoomPathfinder, { x: x.updatePathfinder(obj) });
 	}
 ;
 
+// Tweak lockable objects to update the pathfinder.
 modify Lockable
 	makeLocked(stat) {
 		inherited(stat);
+
+		// If we're not a travel connector (a treasure chest
+		// or a desk or something) then we don't need to
+		// update any pathfinders.
+		if(!ofKind(TravelConnector))
+			return;
 
 		// We always have to update our location.
 		fastPathRoomUpdater.updatePathfinders(self);
@@ -36,6 +44,10 @@ modify Lockable
 	}
 ;
 
+// Data structure for pathfinder updates.
+// Indicates the room and zone where the update happened, which is
+// used to figure out which bits of cached pathfinding data need to
+// be updated.
 class FastPathUpdate: object
 	zoneID = nil
 	room = nil

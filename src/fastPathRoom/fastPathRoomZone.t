@@ -67,12 +67,6 @@ class FastPathRoomZone: FastPathZone
 		return(r.toList());
 	}
 
-/*
-	resetFastPathGateways() {
-		getVertices().forEach({ x: resetFastPathGateway(x) });
-	}
-*/
-
 	resetFastPathGateway(v) {
 		local rm0;
 
