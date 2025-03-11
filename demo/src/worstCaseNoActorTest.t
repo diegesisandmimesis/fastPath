@@ -49,48 +49,12 @@ gameMain: GameMainDef
 	getTimestamp() { return(new Date()); }
 	getInterval(d) { return(((new Date() - d) * 86400).roundToDecimal(5)); }
 
-	toggleDoors() {
-/*
-		local d0, d1, i;
-
-		for(i = 1; i <= doorList.length; i += 4) {
-			if((rand(100) + 1) < 90) continue;
-			if((rand(100) + 1) < 50) {
-				d0 = i;
-				d1 = i + 2;
-				//d0 = doorList[i];
-				//d1 = doorList[i - 1];
-			} else {
-				d0 = i + 2;
-				d1 = i;
-				//d0 = doorList[i - 1];
-				//d1 = doorList[i];
-			}
-			_toggleDoor(d0, true);
-			_toggleDoor(d1, nil);
-		}
-*/
-	}
-
-	_toggleDoor(idx, st) {
-/*
-		local d0, d1;
-
-		d0 = doorList[idx];
-		d1 = doorList[idx + 1];
-
-		d0.makeLocked(st);
-
-		gameMain.updatePathfinder(d0);
-		gameMain.updatePathfinder(d1);
-*/
-	}
-
 	newGame() {
 		local rm;
 
-		doorDaemon = new Daemon(self, &toggleDoors, 1);
+		pathfinder.resetFastPath();
 
+		// Pick a random room and dump the player in it.
 		if((rm = worstCase.getRandomRoom()) != nil)
 			initialPlayerChar.moveInto(rm);
 
@@ -98,16 +62,12 @@ gameMain: GameMainDef
 	}
 ;
 
-pathfinder: RoomPathfinder
-	initializeFastPath() {
-		inherited();
-		resetFastPath();
-	}
-;
+pathfinder: RoomPathfinder;
 
 // Update the worstCase pathfinder to use fastPath.
 modify worstCase
 	execAfterMe = (nilToList(inherited()) + [ fastPathAutoInit ])
+
 	findPath(actor, rm0, rm1) {
 		return(pathfinder.findPath(rm0, rm1));
 	}
@@ -117,32 +77,56 @@ modify WorstCaseRoom
 	fastPathZone = ('zone' + simpleRandomMapGenerator.zoneNumber)
 ;
 
+// Tweak the generator to skip adding actors.
 modify WorstCaseMapGenerator
 	addWorstCaseActors() { return(true); }
 ;
 
+// Schedulable object that does stuff after every turn.
+// Here we pick a bunch of random rooms and compute paths between them.
+// The idea here is that we're replicating the number of pathfinding tasks
+// in the "normal" worst case test, but we're not moving a bunch of
+// actors around.  This is to isolate the cost of pathfinding itself
+// versus the cost of updating a whole bunch of in-game objects.
 modify worstCaseAfter
-	_count = nil
+	_count = nil		// number of paths to compute.
+
 	executeTurn() {
 		computePaths();
 		inherited();
 	}
+
+	// Compute a bunch of random paths.
 	computePaths() {
 		local i, l, rm0, rm1;
 
+		// If we haven't run before we figure out the number of
+		// paths to compute each turn.  This will end up being
+		// the same as the number of rooms in the map, which is
+		// also the total number of randomly-moving actors in
+		// the "real" worst-case test.
 		if(_count == nil) {
 			_count = 0;
 			worstCase.zones.forEach({ x: _count += x._mapSize });
 		}
+
+		// Now compute the paths.
 		for(i = 0; i < _count; i++) {
+			// Get two different random rooms.
 			rm0 = worstCase.getRandomRoom();
 			rm1 = nil;
 			while((rm1 == nil) || (rm0 == rm1))
 				rm1 = worstCase.getRandomRoom();
+
+			// Find the path between them.
 			l = worstCase.findPath(me, rm0, rm1);
-			//l = roomPathFinder.findPath(me, rm0, rm1);
+
+			// Useless conditional so the compiler doesn't
+			// complain that we assigned a variable we
+			// didn't use.
 			if(l) {}
 		}
 	}
 ;
+
 me: Person;

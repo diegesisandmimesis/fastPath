@@ -125,20 +125,15 @@ modify WorstCaseRoom
 	fastPathZone = ('zone' + simpleRandomMapGenerator.zoneNumber)
 ;
 
+// This is the default, so we don't really need to define it.  It's
+// here just to make tweaking the value easier for testing.
 modify WorstCaseMapGenerator mapWidth = 10;
-//modify WorstCaseMapGenerator mapWidth = 8;
 
+// Tweak the agenda to alert us if an actor is trying to move but can't.
+// This should never happen, but we're doing it here because it's
+// been broken before and this'll alert us if it breaks again.
 modify WorstCaseAgenda
 	fastPathMoveFailure(e) {
 		aioSay('\n===MOVEMENT FAILURE===\n ');
 	}
 ;
-
-/*
-modify RoomPathfinder
-	executeTurn() {
-		aioSay('\nFlushing queue\n ');
-		inherited();
-	}
-;
-*/
