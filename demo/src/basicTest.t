@@ -6,6 +6,9 @@
 //
 // This is a very simple demonstration "game" for the fastPath library.
 //
+// It implements a very small patch of very Zork-like terrain and a
+// >PATHFIND action that (should) illustrate assymetric pathfinding.
+//
 // This "game" is distributed under the MIT License, see LICENSE.txt
 // for details.
 //
@@ -21,6 +24,15 @@ versionInfo: GameID
 	inlineCommand(cmd) { "<b>&gt;<<toString(cmd).toUpper()>></b>"; }
 	printCommand(cmd) { "<.p>\n\t<<inlineCommand(cmd)>><.p> "; }
 	showAbout() {
+		"\nThis demo implements a small patch of very Zork-like
+		terrain that includes a (non-locking) door(-ish thing)
+		and a couple of one-way passages.
+		\nThere's also a <<inlineCommand('pathfind')>> command
+		that attempts to compute the path from the starting
+		room to the deepest part of the gameworld and then
+		back to the starting point.  The important point being
+		that the path in and the path out should be different.
+		\n<.p> ";
 	}
 ;
 gameMain: GameMainDef
@@ -44,8 +56,8 @@ gameMain: GameMainDef
 // The >PATHFIND action, which uses the fastPath pathfinder.
 DefineIAction(Pathfind)
 	execAction() {
-		sayPath(houseWest, kitchen);
-		sayPath(kitchen, houseWest);
+		sayPath(houseWest, studio);
+		sayPath(studio, houseWest);
 	}
 	sayPath(rm0, rm1) {
 		local l;
@@ -94,7 +106,7 @@ houseWest: OutdoorRoom 'West of House'
 		action() { "Not THAT kind of flavor. "; }
 	}
 ;
-//+me: Person;
++me: Person;
 
 houseNorth: OutdoorRoom 'North of House'
 	"You are facing the north side of a shamelessly filched white
@@ -240,7 +252,6 @@ studio: Room 'Studio'
 	north = gallery
 	up = chimneyUp
 ;
-+me: Person;
 +chimneyUp: Fixture, OneWayRoomConnector 'chimney' 'chimney'
 	"\n\tChim-chimney,
 	\n\tChim-chimney,
