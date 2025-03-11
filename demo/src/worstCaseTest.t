@@ -7,6 +7,19 @@
 // This demo is intended to be a performance test for the fastPath library.
 // It features four hundred rooms and four hundred actors.
 //
+// The exact layout can be tweaked via the -D SMALL_ZONES flag.  By
+// default (without the flag) the gameworld will consist of four zones
+// (in a 2x2 grid) each consisting of 100 rooms (a 10x10 random maze).
+// With the -D SMALL_ZONES flag, the gameworld will consist of
+// 25 zones (in a 5x5 grid) each consisting of 16 rooms (a 4x4 random
+// maze).
+//
+// For general pathfinding the two cases should be roughly equivalent
+// (path lookups should be about as fast, and almost all of the time
+// will be spent actually updating the gameworld--moving objects
+// from room to room).  Updating the pathfinder should be faster
+// with more smaller zones than fewer larger zones.
+//
 // It can be compiled via the included makefile with
 //
 //	# t3make -f worstCaseTest.t3m
@@ -74,7 +87,6 @@ gameMain: GameMainDef
 				{ x: gameMain.updateDoors(x) });
 			n += 4;
 		}
-		//aioSay('\nupdating <<toString(n)>> doors (<<toString(libGlobal.totalTurns)>>)\n ');
 	}
 
 	updateDoors(lst) {
@@ -114,6 +126,11 @@ pathfinder: RoomPathfinder;
 
 // Update the worstCase pathfinder to use fastPath.
 modify worstCase
+#ifdef SMALL_ZONES
+	zoneWidth = 5
+#else // SMALL_ZONES
+	zoneWidth = 2
+#endif // SMALL_ZONES
 	execAfterMe = (nilToList(inherited()) + [ fastPathAutoInit ])
 	useDoors = (gameMain.useDoors)
 	findPath(actor, rm0, rm1) {
@@ -127,7 +144,11 @@ modify WorstCaseRoom
 
 // This is the default, so we don't really need to define it.  It's
 // here just to make tweaking the value easier for testing.
+#ifdef SMALL_ZONES
+modify WorstCaseMapGenerator mapWidth = 4;
+#else // SMALL_ZONES
 modify WorstCaseMapGenerator mapWidth = 10;
+#endif // SMALL_ZONES
 
 // Tweak the agenda to alert us if an actor is trying to move but can't.
 // This should never happen, but we're doing it here because it's
