@@ -90,6 +90,9 @@ gameMain: GameMainDef
 	}
 
 	intro() {
+		"\nUse <<versionInfo.inlineCommand('about')>> to show
+		information about this demo.
+		<.p>\n ";
 	}
 ;
 

@@ -3,12 +3,10 @@
 -D SIMPLE_RANDOM_MAP
 -Fy obj -Fo obj
 -Fs ../..
--o games/activeTest3.t3
+-o games/activeTest.t3
 -lib system
 -lib adv3/adv3
 -lib dataTypes/dataTypes
--lib asyncEvent/asyncEvent
 -lib simpleRandomMap/simpleRandomMap
 -lib ../fastPath
--source src/activeTest3.t
--source reflect.t
+-source src/activeTest.t

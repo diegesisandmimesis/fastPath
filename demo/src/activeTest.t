@@ -150,7 +150,7 @@ DefineIAction(Vorzer)
 			return;
 		}
 		westDoor.makeLocked(true);
-		westDoor.makeClosed(nil);
+		westDoor.makeOpen(true);
 		defaultReport('Plop, the door is locked. ');
 	}
 ;

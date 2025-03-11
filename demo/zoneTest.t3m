@@ -7,7 +7,5 @@
 -lib system
 -lib adv3/adv3
 -lib dataTypes/dataTypes
--lib asyncEvent/asyncEvent
 -lib ../fastPath
 -source src/zoneTest.t
--source reflect.t

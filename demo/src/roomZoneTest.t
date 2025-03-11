@@ -33,9 +33,9 @@ gameMain: GameMainDef
 				startRoom, foo1, foo2, foo3, bar1, bar2, bar3,
 				exitRoom
 			])) {
-			"test passed\n ";
+			"passed test\n ";
 		} else {
-			"pathfinding FAILED\n ";
+			"ERROR:  pathfinding FAILED\n ";
 		}
 	}
 ;

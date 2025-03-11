@@ -49,7 +49,7 @@ gameMain: GameMainDef
 
 		// See if it worked.
 		if(pathfinder.testPath(rm0, rm1, l))
-			"Passed test\n ";
+			"passed test\n ";
 		else
 			"ERROR: pathfinding failed\n ";
 	}
