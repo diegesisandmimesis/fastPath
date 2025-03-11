@@ -90,12 +90,12 @@ is installed in ``/home/username/tads/fastPath/``, enter the directory with:
 ```
 Then make one of the demos, for example:
 ```
-# make -a -f FIXME.t3m
+# make -a -f makefile.t3m
 ```
 This should produce a bunch of output from the compiler but no errors.  When
 it is done you can run the demo from the same directory with:
 ```
-# frob games/FIXME.t3
+# frob games/game.t3
 ```
 In general the name of the makefile and the name of the compiled story file
 will be the same except for the extensions (``.t3m`` for makefiles and
@@ -387,4 +387,61 @@ bobPathfinder: RoomPathfinder
 
 #### Declaring Multiple Zones
 
+A pathfinding "zone" is a group of rooms in which each room is reachable
+from all other rooms in the zone.  "Reachable" here meaning that a traversable
+path exists between them (they don't have to be **directly** connected to
+each other).  In other words there can be no locked doors
+or blocked passageways preventing movement to any part of the zone from
+any other part of the zone.
+
+By default the room pathfinder starts out with the assumption that all
+rooms are in a single zone.  It then (during preinit) checks to see if
+there are any parts of the map that are unreachable from other parts, and
+defines additional zones to satisfy the general reachability requirement
+described above.
+
+This should work by itself, but smaller zones use fewer resources.  So if
+you can identify regions of the map that would work as their own zones it
+can be advantageous to do so,
+
+All this requires is defining
+```
+	fastPathZone = 'someZoneID'
+```
+on all the ``Room`` instances you want to be in the same zone.  Declaring
+a ``Room`` subclass for this purpose is usually the best way to approach this.
+
+There are no hard and fast rules, and it might be worthwhile to experiment
+with different map partitionings to see what's optimal in terms of performance
+and storyfile size.  The only requirement is that zones consist only of rooms
+that are reachable from every other room in the zone.
+
+In general it probably makes sense to identify functional or logical units
+of the map (all the rooms in one building, individual floors of a dungeon,
+and so on) and declare them as zones.
+
+Note that even with explicitly-declared zones the pathfinder will still,
+during preinit, check for unreachable areas inside a zone and split the
+zone as needed.  This can result in a zone declared as "zoneFoo" becoming
+"zoneFoo-1" and "zoneFoo-2" or something similiar.  When this happens it's
+probably worthwhile to isolate the problem and change the zone definitions
+in the room declarations.
+
+
 #### Updating the Pathfinder
+
+The fastPath pathfinder pre-computes and caches path information for
+performance reasons.  This means that whenever the game state changes in a
+way that affects the traversability of one or more travel connectors the
+pathfinders need to be updated.
+
+The basic mechanism to do this is to call
+```
+fastPathRoomUpdater.updatePathfinders(obj);
+```
+where the ``obj`` argument is an instance of ``Thing``.  If it's a
+``Room`` then the paths into and out of if will be re-evaluated and the
+pathfinding cache updated appropriately.  If it's a non-``Room`` ``Thing``
+then ``getOutermostRoom()`` will be used instead.
+
+This happens automatically for ``Lockable`` objects.
