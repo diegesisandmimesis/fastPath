@@ -27,11 +27,15 @@ versionInfo: GameID
 		"\nThis demo implements a small patch of very Zork-like
 		terrain that includes a (non-locking) door(-ish thing)
 		and a couple of one-way passages.
-		\nThere's also a <<inlineCommand('pathfind')>> command
+		\n<.p>There's also a <<inlineCommand('pathfind')>> command
 		that attempts to compute the path from the starting
 		room to the deepest part of the gameworld and then
 		back to the starting point.  The important point being
 		that the path in and the path out should be different.
+		\n<.p>This is all a bit trivial, but the point is to test that
+		all you have to do is declare a RoomPathfinder instance
+		and pathfinding should <q>just work</q>, and this is a
+		silly but non-trivial gameworld for it to work in.
 		\n<.p> ";
 	}
 ;
@@ -83,8 +87,11 @@ VerbRule(Pathfind) 'pathfind'
 	: PathfindAction verbPhrase = 'pathfind/pathfinding';
 
 // Declare a generic RoomPathfinder instances.
+// For our purposes we're very intentionally not modifying the behavior
+// in any way--the other demos mostly have tweaks and modifications to
+// do whatever the demo does.  So here we're trying to test the pathfinder
+// with no modifications on a non-trivial gameworld.
 pathfinder: RoomPathfinder;
-
 
 houseWest: OutdoorRoom 'West of House'
 	"This is a mildly infringing field west of a white house,
