@@ -102,13 +102,52 @@ houseWest: OutdoorRoom 'West of House'
 	west: FakeConnector { "The forest seems twisty and confusing in
 		ways the developer did not find convenient to program. " }
 ;
-+Fixture '(white) house' 'house'
++field: Decoration '(mildly) (infringing) field' 'field'
+	"It's like a mildly infringing ring, but it also has a
+		multiplicative inverse. "
+	soundDesc = "You hear a milding infringing ring in your ears.
+		It has a multiplicative inverse. "
+;
++Decoration '(mildly) (infringing) ring' 'ring'
+	"It's like a mildly infringing group, but with an associative
+		and distributive operator. "
+	soundDesc = "You hear a milding infringing group in your ears.
+		It has an associative and distributed operator. "
+;
++Decoration '(abelian) (albanian) (mildly) (infringing) group' 'group'
+	"It's an abelian group, which means it hails from the coast
+		of the Adriatic. "
+;
++Unthing 'adriatic' 'Adriatic'
+	'It\'s not here, it\'s in the Balkans. '
+;
++Decoration '(associative) (distributive) operator'
+	'associative and distributive operator'
+	"You try to reach the operator but you can't get a ring tone.
+	<.p>Ring tone.  That's a math joke. "
+	soundDesc = "It sounds exactly like something you can't hear. "
+;
++Decoration, Vaporous '(ring) tone' 'ring tone'
+	soundDesc = "It sounds like most other things you can't hear. "
+;
++Decoration '(multiplicative) inverse' 'multiplicative inverse'
+	desc() {
+		local i, r, txt;
+
+		txt = _outputCapture({: field.desc }).split(nil);
+		r = new StringBuffer(txt.length);
+		for(i = txt.length; i >= 1; i--)
+			r.append(txt[i]);
+		"<<r>>\n ";
+	}
+;
++Decoration '(white) house' 'house'
 	"It looks strangely familiar. ";
-+Fixture '(twisty) (confusing) forest tree*trees' 'forest'
++Decoration '(twisty) (confusing) forest tree*trees' 'forest'
 	"It's a forest of twisty trees, all unimplemented. ";
-+Fixture '(boarded) (front) door' 'door'
++Decoration '(boarded) (front) door' 'door'
 	"Unimplemented. ";
-+Fixture 'board*boards' 'board' "Purely flavor text, stop fiddling with it. "
++Decoration 'board*boards' 'board' "Purely flavor text, stop fiddling with it. "
 	dobjFor(Taste) {
 		action() { "Not THAT kind of flavor. "; }
 	}
@@ -124,11 +163,11 @@ houseNorth: OutdoorRoom 'North of House'
 	east = houseEast
 	west = houseWest
 ;
-+Fixture '(shamelessly) (filched) (white) house' 'house'
++Decoration '(shamelessly) (filched) (white) house' 'house'
 	"It looks strangely familiar. ";
-+Fixture 'forest' 'forest'
++Decoration 'forest' 'forest'
 	"[This forest intentionally left blank]";
-+Fixture 'window*windows' 'windows'
++Decoration 'window*windows' 'windows'
 	"I just said they don't respond to actions. ";
 
 houseSouth: OutdoorRoom 'South of House'
@@ -173,10 +212,10 @@ kitchen: Room 'Kitchen'
 	masterObject = jarOutside;
 +Unthing 'table' 'table'
 	'Can\'t see anything like that here, nope. ';
-+Fixture '(dark) staircase*stairs' 'staircase'
++Decoration '(dark) staircase*stairs' 'staircase'
 	"Don't make eye contact with the stairs. "
 ;
-+Fixture 'passage*passages' 'passage'
++Decoration 'passage*passages' 'passage'
 	"This kitchen has an awful lot of passages, for a kitchen.  One.
 	One seems like a lot. ";
 
@@ -192,7 +231,7 @@ livingRoom: Room 'Living Room'
 ;
 +trapDoorUp: AutoClosingDoor, OneWayRoomConnector '(trap) door' 'trap door'
 	dobjFor(Open) { verify() { nonObvious; } };
-+Fixture '(west) door' 'door' "Not worth mentioning. ";
++Decoration '(west) door' 'door' "Not worth mentioning. ";
 +Unthing 'rug' 'rug' 'It really tied the room together. ';
 
 
@@ -208,7 +247,7 @@ cellar: Room 'Cellar'
 +trapDoorDown: AutoClosingDoor '(trap) door' 'trap door'
 	masterObject = trapDoorUp
 ;
-+Fixture '(steep) (metal) ramp' 'ramp'
++Decoration '(steep) (metal) ramp' 'ramp'
 	"All appearances to the contrary, it doesn't acutally exist. "
 ;
 
@@ -223,10 +262,10 @@ westChasm: Room 'West of Chasm'
 	north = cellar
 	south = gallery
 ;
-+Fixture '(west) (east) edge chasm bottom' 'chasm'
++Decoration '(west) (east) edge chasm bottom' 'chasm'
 	"It's best not to even look at the chasm.  Too disturbing. "
 ;
-+Fixture '(narrow) passage' 'passage'
++Decoration '(narrow) passage' 'passage'
 	"I guess it technically isn't a passage if it doesn't lead anywhere. "
 ;
 
@@ -239,7 +278,8 @@ gallery: Room 'Galleon'
 	north = westChasm
 	south = studio
 ;
-+Fixture 'galleon' 'galleon'
+//+me: Person;
++Decoration 'galleon' 'galleon'
 	"Yep, it's a galleon.  For some damn reason. "
 ;
 +Unthing 'gallery' 'gallery'
@@ -259,7 +299,7 @@ studio: Room 'Studio'
 	north = gallery
 	up = chimneyUp
 ;
-+chimneyUp: Fixture, OneWayRoomConnector 'chimney' 'chimney'
++chimneyUp: Decoration, OneWayRoomConnector 'chimney' 'chimney'
 	"\n\tChim-chimney,
 	\n\tChim-chimney,
 	\n\tChim, chim, cher-bork.
@@ -273,25 +313,25 @@ studio: Room 'Studio'
 +Unthing '(artist) studio' 'studio'
 	'Apparently it used to be a studio?  Don\'t ask me. '
 ;
-+Fixture 'orlop' 'orlop'
++Decoration 'orlop' 'orlop'
 	"It's the lowest deck of the ship.  As if that explains anything. "
 ;
-+Fixture, Distant 'galleon ship' 'galleon'
++Decoration, Distant 'galleon ship' 'galleon'
 	"For some reason it has a spanker at mizzen instead of a lateen
 	rig, but that's not worth getting into here. "
 ;
-+Fixture, Distant 'spanker sail' 'spanker'
++Decoration, Distant 'spanker sail' 'spanker'
 	"It's a kind of fore-and-aft rigged sail. "
 ;
 +Unthing 'lateen rig' 'lateen'
 	'It\'s the kind of fore-and-aft sail the ship does not, but should,
 	have. ';
-+Fixture, Distant 'mizzen mizzenmast mast*masts' 'mizzenmast'
++Decoration, Distant 'mizzen mizzenmast mast*masts' 'mizzenmast'
 	"It's the aftmost mast on the ship. "
 ;
-+Fixture, Distant 'fore foremast mast*masts' 'foremast'
++Decoration, Distant 'fore foremast mast*masts' 'foremast'
 	"It's the foremost mast on the ship. "
 ;
-+Fixture, Distant 'main mainmast mast*masts' 'mainmast'
++Decoration, Distant 'main mainmast mast*masts' 'mainmast'
 	"It's the middle mast on the ship. "
 ;
