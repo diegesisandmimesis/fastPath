@@ -231,7 +231,7 @@ livingRoom: Room 'Living Room'
 ;
 +trapDoorUp: AutoClosingDoor, OneWayRoomConnector '(trap) door' 'trap door'
 	dobjFor(Open) { verify() { nonObvious; } };
-+Decoration '(west) door' 'door' "Not worth mentioning. ";
++Decoration '(west) (to) door' 'door' "Not worth mentioning. ";
 +Unthing 'rug' 'rug' 'It really tied the room together. ';
 
 
@@ -295,11 +295,11 @@ studio: Room 'Studio'
 	speaking, make any sense that the orlop should be south of the
 	ship it is ostensibly a part of, but all logic or consistency
 	appears to have gone by the board.  Anyway, there's a chimney...an
-	orlop chimney apparently, that leads up and an exit to the north. "
+	orlop chimney apparently...that leads up and an exit to the north. "
 	north = gallery
 	up = chimneyUp
 ;
-+chimneyUp: Decoration, OneWayRoomConnector 'chimney' 'chimney'
++chimneyUp: Decoration, OneWayRoomConnector '(orlop) chimney' 'chimney'
 	"\n\tChim-chimney,
 	\n\tChim-chimney,
 	\n\tChim, chim, cher-bork.
@@ -313,7 +313,7 @@ studio: Room 'Studio'
 +Unthing '(artist) studio' 'studio'
 	'Apparently it used to be a studio?  Don\'t ask me. '
 ;
-+Decoration 'orlop' 'orlop'
++Decoration '(lowest) orlop deck' 'orlop'
 	"It's the lowest deck of the ship.  As if that explains anything. "
 ;
 +Decoration, Distant 'galleon ship' 'galleon'
