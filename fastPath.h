@@ -15,4 +15,6 @@
 #define isMap(obj) (isType(obj, FastPathMap))
 #define isZone(obj) (isType(obj, FastPathZone))
 
+#define gUpdateFastPath(obj) (fastPathRoomUpdater.updatePathfinders(obj))
+
 #define FAST_PATH_H
